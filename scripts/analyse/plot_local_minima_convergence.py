@@ -5,15 +5,15 @@ import os
 
 cwd = os.getcwd()                    # current working directory
 # folder name, containing the data files
+# TODO : Fix this with patlib
 MINIMA_DATA_LOCATION = '/home/manuel/Dropbox/Studium/Master/Thesis Project/thesis/results/figs/pes/UHF_BOSS_run/postprocessing/data_local_minima/'
 RESULTS_LOCATION = '/home/manuel/Dropbox/Studium/Master/Thesis Project/thesis/results/figs/'
 #pes_data_folder = '/data_pes/'
 
-# Colors taken from
-# http://geotests.net/couleurs/gradients_en.html
-colors = ['#ffe44c', '#f3d143', '#e8bf3a', '#ddae31', '#d19c29',
-    '#c68b22', '#bb7b1c', '#b06c16', '#a45d10', '#994f0b', '#8e4107',
-    '#833503', '#772900']
+colors = ['#00ffff', '#0ef1ff', '#1ce3ff', '#2ad4ff', '#39c6ff', '#47b8ff',
+'#55aaff', '#639cff', '#718eff', '#8080ff', '#8e71ff', '#9c63ff', '#aa55ff',
+'#b847ff', '#c639ff', '#d42bff', '#e31cff', '#f10eff', '#ff00ff']
+
 linestyles = ['solid', 'dotted', 'dashed', 'dashdot']
 
 def main():
@@ -51,20 +51,21 @@ def plot_convergence_over_iteration(list_containing_minima, data_pes=None):
 
     plt_idx = 0
     for idx, energy in enumerate(energies_list):
-        if 5*idx <= 10 or 5*idx >= 75:
+        if 5*idx <= 15:
             print("Skipping", 5*idx)
             continue
         print("Plotting", 5*idx)
         plt_idx += 1
-        ls = 'solid' if 5*idx >= 55 else 'dashed'
+        ls = 'solid' if 5*idx >= 45 else 'dashed'
         plt.plot(np.arange(len(energy))+1, energy, label=str(5*idx),
-            color=colors[plt_idx % len(colors)], linestyle=ls)
+            color=colors[plt_idx % len(colors)], linestyle=ls, linewidth=2)
                 # linestyle=linestyles[plt_idx % len(linestyles)])
-    plt.xlabel(r'$i$-th local minima')
+    plt.xlabel(r'$i$-th local minima', fontsize=15)
     ax.set_xticks([1,2,3,4,5])
-    plt.ylabel(r'E')
-    plt.title(r'Local minima after $n$ BOSS iterations')
-    plt.legend()
+    plt.ylabel(r'E', fontsize=15)
+    plt.title(r'Local minima after $n$ BOSS iterations', fontsize=15)
+    plt.legend(loc='upper left', fontsize=15)
+    plt.tight_layout()
     plt.savefig(RESULTS_LOCATION + 'ordered_minima_predictions.pdf')
 
     if data_pes is not None:
