@@ -1,0 +1,110 @@
+
+-----------------------------   Welcome to ....   ------------------------------
+                      _______  _______ _______ _______ 
+                     |   _   \|   _   |   _   |   _   |
+                     |.  1   /|.  |   |   1___|   1___|
+                     |.  _   \|.  |   |____   |____   |
+                     |:  1    |:  1   |:  1   |:  1   |
+                     |::.. .  |::.. . |::.. . |::.. . |
+                     `-------'`-------`-------`-------'
+
+                                  Version 1.2                                   
+                              30-06-2021 13:12:49                               
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+                               SIMULATION OPTIONS                               
+--------------------------------------------------------------------------------
+|| File input/output 
+ipfile         boss.in
+userfn         userfn_2D.py
+outfile        boss_pp.out
+rstfile        boss.rst
+
+|| Key settings 
+bounds         -5.000E+01 3.100E+02;    -5.000E+01 3.100E+02
+kerntype       stdp stdp
+yrange         -1.000E+01 1.000E+01
+noise          1.000E-12
+inittype       sobol
+initpts   2    iterpts   100
+gm_tol         none
+verbosity      2
+
+|| Data acquisition 
+acqfn                elcb
+acqtol               1.000E-03
+
+|| GP hyperparameters 
+thetainit       1.000E+01 3.142E-01
+thetabounds     1.000E-02 1.000E+04;    3.142E-03 3.142E+01;    3.142E-03 3.142E+01
+thetaprior      gamma
+thetapriorpar   2.000E+00 8.000E+00;    3.368E+00 9.020E+00;    3.368E+00 9.020E+00
+
+|| Hyperparameter optimization
+updatefreq   1  initupdate      True
+updateoffset 0  updaterestarts  2
+
+| postprocessing
+pp_models         = True
+pp_acq_funcs      = False
+pp_truef_npts     = none
+pp_model_slice        = 1 2 100
+pp_truef_at_xhats = False
+pp_local_minima   = 1
+
+
+| Starting post-processing...
+--------------------------------------------------------------------------------
+                                POST-PROCESSING                                 
+--------------------------------------------------------------------------------
+| Post-processing iteration 3
+| Finding model local minima
+| Post-processing iteration 8
+| Finding model local minima
+| Post-processing iteration 13
+| Finding model local minima
+| Post-processing iteration 18
+| Finding model local minima
+| Post-processing iteration 23
+| Finding model local minima
+| Post-processing iteration 28
+| Finding model local minima
+| Post-processing iteration 33
+| Finding model local minima
+| Post-processing iteration 38
+| Finding model local minima
+| Post-processing iteration 43
+| Finding model local minima
+| Post-processing iteration 48
+| Finding model local minima
+| Post-processing iteration 53
+| Finding model local minima
+| Post-processing iteration 58
+| Finding model local minima
+| Post-processing iteration 63
+| Finding model local minima
+| Post-processing iteration 68
+| Finding model local minima
+| Post-processing iteration 73
+| Finding model local minima
+| Post-processing iteration 78
+| Finding model local minima
+| Post-processing iteration 83
+| Finding model local minima
+| Post-processing iteration 88
+| Finding model local minima
+| Post-processing iteration 93
+| Finding model local minima
+| Post-processing iteration 98
+| Finding model local minima
+| Post-processing iteration 100
+| Finding model local minima
+| Post-processing completed, time [s]      436.015
+
+
+--------------------------------------------------------------------------------
+                        BOSS is done! Have a nice day :)                        
+
+      Datetime 30-06-2021 13:20:05            Total time [s]      436.018       
+--------------------------------------------------------------------------------
