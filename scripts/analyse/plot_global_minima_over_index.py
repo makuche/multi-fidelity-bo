@@ -2,46 +2,63 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 import yaml
-import sys
-
 from pathlib import Path
-sys.path.append(Path(__file__).resolve().parent.parent)
+from collections import OrderedDict
 
-EXP_NAMES = ['UHF', 'UHF_B2_5iterations', 'a1a1', 'a1b1']
-EXP_NAMES = EXP_NAMES[:2]
-OLD_RUNS = EXP_NAMES[2:]
+# For now, script is only used for the gaussian fidelity experiments
+EXP_NAMES = ['UHF_B1_sobol', 'UHF_B2_manual_sobol']
+EXPS_DATA = {
+    'UHF_B1_sobol': OrderedDict(),
+    'UHF_B2_manual_sobol': OrderedDict(),
+}
 
 THESIS_FOLDER = Path(__file__).resolve().parent.parent.parent
-PROCESSED_DATA_FOLDER = THESIS_FOLDER.joinpath('data').joinpath('processed')
-EXP_PATHS = [PROCESSED_DATA_FOLDER.joinpath(exp).joinpath('exp_1.json') \
-    for exp in EXP_NAMES]
+PROCESSED_DATA_FOLDER = THESIS_FOLDER / 'data' / 'processed'
+# TODO : Consider multiple exp_* files
 
+
+EXP_PATHS = [PROCESSED_DATA_FOLDER / exp  for exp in EXP_NAMES]
 COLORS = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red']
 
+
 def main():
-    exps_data = dict()
     for exp, exp_path in zip(EXP_NAMES, EXP_PATHS):
-        exps_data[exp] = load_json(exp_path,f'')
-    #print(exps_data['UHF']['xy'])
-    plot_energy_over_index(exps_data)
+        runs = sorted([run for run in exp_path.iterdir()])
+        for idx, run in enumerate(runs):
+            EXPS_DATA[exp][idx] = load_json(run, '')
+    energy_data = merge_data_from_manual_runs(EXPS_DATA)
+    print(energy_data)
+    plot_energy_over_index(energy_data)
 
-def plot_energy_over_index(exps_data):
-    # TODO : Add Delta_E for UHF runs, so differences can become clear
-    # (maybe in a extra figure)
-    fig, ax = plt.subplots(figsize=(13, 8))
-    for i, exp in enumerate(exps_data):
-        energies = np.array(exps_data[exp]['xy'])[:,-1]
-        if exp in OLD_RUNS:
-            energies -= 25  # add shift for the plot
-#        energies += exps_data[exp]['truemin'][0][-1]
-        plt.plot(np.arange(len(energies)), energies, label=exp, c=COLORS[i])
+def plot_energy_over_index(data):
 
-
+    fig, ax = plt.subplots(figsize=(13,8))
+    energy_shift = data['UHF_B1_sobol'][0] - data['UHF_B2_manual_sobol'][0]
+    for idx, exp_name in enumerate(data):
+        energies = data[exp_name]
+        plt.plot(np.arange(len(energies)),
+            energies, c=COLORS[idx], label=exp_name)
+        if exp_name == 'UHF_B2_manual_sobol':
+            energies += energy_shift
+            plt.plot(np.arange(len(energies)),
+                energies, c=COLORS[idx], label='shifted UHF_B2')
     plt.legend(loc='lower right', fontsize=15)
     plt.xlabel(r'iteration', fontsize=15)
     plt.ylabel(r'$E$', fontsize=15)
     plt.title(r'Calculated energy over iteration for sobol run', fontsize=15)
     plt.show()
+
+def merge_data_from_manual_runs(data):
+    exp_energies = { key: [] for key in EXP_NAMES }
+    for exp_name in data:
+        for exp_run in data[exp_name]:
+            energies = np.array(data[exp_name][exp_run]['xy'])[::,-1]
+            if 'truemin' in data[exp_name][exp_run].keys() and \
+                len(data[exp_name][exp_run]['truemin']) != 0:
+                energies += data[exp_name][exp_run]['truemin'][0][-1]
+            for value in energies:
+                exp_energies[exp_name].append(value)
+    return exp_energies
 
 def load_json(path, filename):
     """

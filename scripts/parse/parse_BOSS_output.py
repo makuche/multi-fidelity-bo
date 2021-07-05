@@ -13,7 +13,7 @@ raw_data_dir = thesis_dir.joinpath('data').joinpath('raw')
 processed_data_dir = thesis_dir.joinpath('data').joinpath('processed')
 
 # experiments to do the parsing (TODO : Do this in another script later on)
-exps = ['a1a1', 'a1a2', 'a1b1', 'UHF', 'UHF_B2_5iterations',
+exps = ['a1a1', 'a1a2', 'a1b1', 'UHF_B1_sobol', 'UHF_B2_5iterations',
     'UHF_B2_manual_sobol_runs']
 
 def parse_values(line, typecast=int, sep=None, idx=1):
@@ -181,7 +181,7 @@ for exp in exps:
     for idx, sub_exp in enumerate(sub_exp_paths):
         # Casting the pathlib objects to str, so methods like .split() can be used
         file_path = str(sub_exp.joinpath('boss.out'))
-        json_str = 'exp_' + str(idx+1) + '.json'
+        json_str = 'exp_' + str(idx+1) + '.json' # TODO : Ugly but works, maybe change this
         processed_data_dir.joinpath(exp).mkdir(parents=True, exist_ok=True)
         json_path = str(processed_data_dir.joinpath(exp).joinpath(json_str))
         parse(file_path, exp, json_path)
