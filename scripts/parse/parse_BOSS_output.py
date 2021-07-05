@@ -8,13 +8,27 @@ import re
 from pathlib import Path
 
 # folder locations for raw and processed data
-thesis_dir = Path(__file__).resolve().parent.parent.parent
-raw_data_dir = thesis_dir.joinpath('data').joinpath('raw')
-processed_data_dir = thesis_dir.joinpath('data').joinpath('processed')
+THESIS_DIR = Path(__file__).resolve().parent.parent.parent
+RAW_DATA_DIR = THESIS_DIR.joinpath('data').joinpath('raw')
+PROCESSED_DATA_DIR = THESIS_DIR.joinpath('data').joinpath('processed')
 
-# experiments to do the parsing (TODO : Do this in another script later on)
-exps = ['a1a1', 'a1a2', 'a1b1', 'UHF_B1_sobol', 'UHF_B2_5iterations',
+# experiments to do the parsing for (TODO : Do this in another script later on)
+EXPS = ['a1a1', 'a1a2', 'a1b1', 'UHF_B1_sobol', 'UHF_B2_5iterations',
     'UHF_B2_manual_sobol_runs']
+
+def main():
+    # Test. TODO : Take this part later to another script
+    for exp in EXPS:
+        exp_path = RAW_DATA_DIR.joinpath(exp)
+        sub_exp_paths = [x for x in exp_path.iterdir() if x.is_dir()]
+        for idx, sub_exp in enumerate(sub_exp_paths):
+            # Casting the pathlib objects to str, so methods like .split() can be used
+            file_path = str(sub_exp.joinpath('boss.out'))
+            json_str = 'exp_' + str(idx+1) + '.json' # TODO : Ugly but works, maybe change this
+            PROCESSED_DATA_DIR.joinpath(exp).mkdir(parents=True, exist_ok=True)
+            json_path = str(PROCESSED_DATA_DIR.joinpath(exp).joinpath(json_str))
+            parse(file_path, exp, json_path)
+
 
 def parse_values(line, typecast=int, sep=None, idx=1):
     """Returns a list of parsed values from a line in the output file.
@@ -30,6 +44,7 @@ def parse_values(line, typecast=int, sep=None, idx=1):
     """
     # .strip removes spaces from the beginning and end of the string
     return [typecast(val.strip(sep)) for val in line.split(sep)[idx:]]
+
 
 def save_to_json(path, file_name, exp_name, json_path=None, json_name=None):
     """Parse the results and save to json file.
@@ -51,6 +66,7 @@ def save_to_json(path, file_name, exp_name, json_path=None, json_name=None):
     with open(os.path.expanduser(f'{json_path}{json_name}.json'), 'w') as output_file:
         print(f'Writing to file {json_path}{json_name}.json ...')
         json.dump(results, output_file, indent=4)
+
 
 def read_and_preprocess_boss_output(path, file_name, exp_name):
     """Reads boss.out file and returns a dict() with parsed values.
@@ -174,14 +190,6 @@ def parse(input_file_path, exp_name, output_file_path):
     output_file = output_file_path.split('.json')[0]
     save_to_json('', input_file_path, exp_name, '', output_file)
 
-# Test. TODO : Take this part later to another script
-for exp in exps:
-    exp_path = raw_data_dir.joinpath(exp)
-    sub_exp_paths = [x for x in exp_path.iterdir() if x.is_dir()]
-    for idx, sub_exp in enumerate(sub_exp_paths):
-        # Casting the pathlib objects to str, so methods like .split() can be used
-        file_path = str(sub_exp.joinpath('boss.out'))
-        json_str = 'exp_' + str(idx+1) + '.json' # TODO : Ugly but works, maybe change this
-        processed_data_dir.joinpath(exp).mkdir(parents=True, exist_ok=True)
-        json_path = str(processed_data_dir.joinpath(exp).joinpath(json_str))
-        parse(file_path, exp, json_path)
+
+if __name__ == '__main__':
+    main()
