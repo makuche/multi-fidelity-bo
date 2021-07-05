@@ -18,6 +18,10 @@ def substract_y_offset(data):
     Args:
         data (dict): Parsed data from boss.out
     """
+    # This is for the unfinished boss runs (TODO : Remove later again..)
+    if len(data['truemin']) == 0:
+        return
+
     y_offset = np.array(data['truemin'])[:,-1]
 
     for value in data['gmp']:

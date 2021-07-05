@@ -4,6 +4,17 @@ import os
 import sys
 import preprocess
 import copy
+import re
+from pathlib import Path
+
+# folder locations for raw and processed data
+thesis_dir = Path(__file__).resolve().parent.parent.parent
+raw_data_dir = thesis_dir.joinpath('data').joinpath('raw')
+processed_data_dir = thesis_dir.joinpath('data').joinpath('processed')
+
+# experiments to do the parsing (TODO : Do this in another script later on)
+exps = ['a1a1', 'a1a2', 'a1b1', 'UHF', 'UHF_B2_5iterations',
+    'UHF_B2_manual_sobol_runs']
 
 def parse_values(line, typecast=int, sep=None, idx=1):
     """Returns a list of parsed values from a line in the output file.
@@ -148,7 +159,6 @@ def read_and_preprocess_boss_output(path, file_name, exp_name):
     # TODO : This already has to be changed for the 'normal' boss runs, the current approach
     # works only for the sobol runs
     results['truemin'] = copy.deepcopy(results['best_acq'])
-
     results = preprocess.preprocess(results)
     return results
 
@@ -164,8 +174,14 @@ def parse(input_file_path, exp_name, output_file_path):
     output_file = output_file_path.split('.json')[0]
     save_to_json('', input_file_path, exp_name, '', output_file)
 
-# Test
-for exp in ['a1a1', 'a1b1', 'UHF', 'UHF_newbasis']:
-    file_path = f'/home/manuel/Dropbox/Studium/Master/Thesis Project/thesis/data/raw/{exp}/exp_1/boss.out'
-    json_path = f'/home/manuel/Dropbox/Studium/Master/Thesis Project/thesis/data/processed/{exp}/exp_1.json'
-    parse(file_path, exp, json_path)
+# Test. TODO : Take this part later to another script
+for exp in exps:
+    exp_path = raw_data_dir.joinpath(exp)
+    sub_exp_paths = [x for x in exp_path.iterdir() if x.is_dir()]
+    for idx, sub_exp in enumerate(sub_exp_paths):
+        # Casting the pathlib objects to str, so methods like .split() can be used
+        file_path = str(sub_exp.joinpath('boss.out'))
+        json_str = 'exp_' + str(idx+1) + '.json'
+        processed_data_dir.joinpath(exp).mkdir(parents=True, exist_ok=True)
+        json_path = str(processed_data_dir.joinpath(exp).joinpath(json_str))
+        parse(file_path, exp, json_path)
