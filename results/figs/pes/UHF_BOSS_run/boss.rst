@@ -17,7 +17,7 @@ pp_models 1
 pp_local_minima 1.0
 
 thetaprior gamma
-thetapriorpar 2 8; 3.3678 9.0204; 3.3678 9.0204
+thetapriorparam 2 8; 3.3678 9.0204; 3.3678 9.0204
 
 RESULTS:
  -5.000000000000000E+01 -5.000000000000000E+01      -2.027083135584011E+05

@@ -30,8 +30,8 @@ def main():
     print(energy_data)
     plot_energy_over_index(energy_data)
 
-def plot_energy_over_index(data):
 
+def plot_energy_over_index(data):
     fig, ax = plt.subplots(figsize=(13,8))
     energy_shift = data['UHF_B1_sobol'][0] - data['UHF_B2_manual_sobol'][0]
     for idx, exp_name in enumerate(data):
@@ -48,6 +48,11 @@ def plot_energy_over_index(data):
     plt.title(r'Calculated energy over iteration for sobol run', fontsize=15)
     plt.show()
 
+    plt.scatter(data['UHF_B1_sobol'][:40], data['UHF_B2_manual_sobol'],
+        marker='x', color='blue', alpha=.5)
+    plt.show()
+
+
 def merge_data_from_manual_runs(data):
     exp_energies = { key: [] for key in EXP_NAMES }
     for exp_name in data:
@@ -60,6 +65,7 @@ def merge_data_from_manual_runs(data):
                 exp_energies[exp_name].append(value)
     return exp_energies
 
+
 def load_json(path, filename):
     """
     load json file
@@ -69,6 +75,7 @@ def load_json(path, filename):
         return data
     raise FileNotFoundError(f'{path}{filename} could not be loaded with \
         json.load')
+
 
 if __name__ == '__main__':
     main()
