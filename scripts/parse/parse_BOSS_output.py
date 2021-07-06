@@ -1,10 +1,8 @@
 import numpy as np
 import json
-import os 
-import sys
+import os
 import preprocess
 import copy
-import re
 from pathlib import Path
 
 # folder locations for raw and processed data
@@ -15,6 +13,7 @@ PROCESSED_DATA_DIR = THESIS_DIR.joinpath('data').joinpath('processed')
 # experiments to do the parsing for (TODO : Do this in another script later on)
 EXPS = ['a1a1', 'a1a2', 'a1b1', 'UHF_B1_sobol', 'UHF_B2_5iterations',
     'UHF_B2_manual_sobol_runs']
+
 
 def main():
     # Test. TODO : Take this part later to another script
@@ -78,19 +77,19 @@ def read_and_preprocess_boss_output(path, file_name, exp_name):
     """
     path = os.path.expanduser(path)
     results = {'name': exp_name,
-        'initpts': None,
-        'iterpts': None,
-        'bounds': None,
-        'num_tasks': 1,
-        'obs': None,           # TODO : Check what that was
-        'acq_times': None,
-        'best_acq': None,
-        'gmp': None,
-        'gmp_convergence': None,
-        'GP_hyperparam': None,
-        'iter_times': None,
-        'total_time': None
-    }
+               'initpts': None,
+               'iterpts': None,
+               'bounds': None,
+               'num_tasks': 1,
+               'obs': None,           # TODO : Check what that was
+               'acq_times': None,
+               'best_acq': None,
+               'gmp': None,
+               'gmp_convergence': None,
+               'GP_hyperparam': None,
+               'iter_times': None,
+               'total_time': None
+               }
     xy = []
     acq_times = []
     best_acq = []
@@ -112,12 +111,17 @@ def read_and_preprocess_boss_output(path, file_name, exp_name):
                 best_acq.append(parse_values(line, typecast=float, idx=0))
             elif 'Global minimum prediction' in line:
                 line = lines[i+1]
-                global_min_prediction.append(parse_values(line, typecast=float, idx=0))
-            # TODO : Check what the following parses for (maybe something in BOSS_MT)
+                global_min_prediction.append(parse_values(line, typecast=float,
+                                                          idx=0))
+            # TODO : Check what the following parses for (maybe something in
+            # BOSS_MT)
             elif 'Global minimum convergence' in line:
                 line = lines[i+1]
-                global_min_prediction_convergence.append(parse_values(line, typecast=float, \
-                    idx=0))
+                global_min_prediction_convergence.append(
+                    parse_values(line,
+                                 typecast=float,
+                                 idx=0)
+                                 )
             elif 'GP model hyperparameters' in line:
                 line = lines[i+1]
                 gp_hyperparam.append(parse_values(line, typecast=float, idx=0))

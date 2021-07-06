@@ -13,6 +13,12 @@ THESIS_DIR = Path(__name__).resolve().parent.parent.parent
 SOBOL_EXPERIMENTS = ['a1a1', 'a1b1', 'UHF_B1_sobol',
     #'UHF_B2_manual_sobol',
 ]
+SOBOL_EXPERIMENTS = [
+    'UHF_B2_manual_sobol',
+    'UHF_B1_sobol',
+    'a1b1',
+    'a1a1'
+]
 # TODO : Create a list with all exp_*.json...
 exp_list = [
     THESIS_DIR / 'data' / 'processed' / exp  for \
@@ -21,8 +27,8 @@ exp_list = [
 N_DATA_POINTS = 40
 
 def main():
-    plot_y_scatter_trellis(exp_list, data_points=100)
-    plot_acquisition_times(exp_list, data_points=100)
+    plot_y_scatter_trellis(exp_list)
+    plot_acquisition_times(exp_list)
 
 
 def plot_y_scatter_trellis(exp_list, figname='trellis_correlation.pdf', \
@@ -64,7 +70,7 @@ def plot_y_scatter_trellis(exp_list, figname='trellis_correlation.pdf', \
                     y_values[idx,:] = np.array(data['xy'])[:data_points,-1]
                     names.append(data['name'][:6])
 
-
+    names = ['UHF_B2', 'UHF_B1', 'HF', 'LF']
     fig, axs = plt.subplots(N,N, figsize=(5*N,5*N), constrained_layout=True)
     for i in range(N):
         ax = axs[i,i]
@@ -76,7 +82,7 @@ def plot_y_scatter_trellis(exp_list, figname='trellis_correlation.pdf', \
             transform=ax.transAxes)
         for j in range(i+1,N):
             ax = axs[i,j]
-            axs[i,j].scatter(y_values[i,:], y_values[j,:], marker='x', \
+            axs[i,j].scatter(y_values[j,:], y_values[i,:], marker='x', \
                 color='blue', alpha=.5)
             ax.set_xticks(axs[0,1].get_yticks())
             ax.set_yticks(axs[0,1].get_xticks())
