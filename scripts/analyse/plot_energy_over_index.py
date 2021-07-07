@@ -48,10 +48,6 @@ def plot_energy_over_index(data):
     plt.title(r'Calculated energy over iteration for sobol run', fontsize=15)
     plt.show()
 
-    plt.scatter(data['UHF_B1_sobol'][:40], data['UHF_B2_manual_sobol'],
-        marker='x', color='blue', alpha=.5)
-    plt.show()
-
 
 def merge_data_from_manual_runs(data):
     exp_energies = { key: [] for key in EXP_NAMES }
