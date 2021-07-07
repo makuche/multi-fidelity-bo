@@ -14,10 +14,9 @@ EXPS_DATA = {
 
 THESIS_FOLDER = Path(__file__).resolve().parent.parent.parent
 PROCESSED_DATA_FOLDER = THESIS_FOLDER / 'data' / 'processed'
-# TODO : Consider multiple exp_* files
 
 
-EXP_PATHS = [PROCESSED_DATA_FOLDER / exp  for exp in EXP_NAMES]
+EXP_PATHS = [PROCESSED_DATA_FOLDER / exp for exp in EXP_NAMES]
 COLORS = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red']
 
 
@@ -27,7 +26,7 @@ def main():
         for idx, run in enumerate(runs):
             EXPS_DATA[exp][idx] = load_json(run, '')
     energy_data = merge_data_from_manual_runs(EXPS_DATA)
-    print(energy_data)
+    print(EXPS_DATA)
     plot_energy_over_index(energy_data)
 
 
@@ -37,25 +36,24 @@ def plot_energy_over_index(data):
     for idx, exp_name in enumerate(data):
         energies = data[exp_name]
         plt.plot(np.arange(len(energies)),
-            energies, c=COLORS[idx], label=exp_name)
+                 energies, c=COLORS[idx], label=exp_name)
         if exp_name == 'UHF_B2_manual_sobol':
             energies += energy_shift
             plt.plot(np.arange(len(energies)),
-                energies, c=COLORS[idx], label='shifted UHF_B2')
+                     energies, c=COLORS[idx], label='shifted UHF_B2')
     plt.legend(loc='lower right', fontsize=15)
     plt.xlabel(r'iteration', fontsize=15)
     plt.ylabel(r'$E$', fontsize=15)
     plt.title(r'Calculated energy over iteration for sobol run', fontsize=15)
     
 
-
 def merge_data_from_manual_runs(data):
-    exp_energies = { key: [] for key in EXP_NAMES }
+    exp_energies = {key: [] for key in EXP_NAMES}
     for exp_name in data:
         for exp_run in data[exp_name]:
-            energies = np.array(data[exp_name][exp_run]['xy'])[::,-1]
+            energies = np.array(data[exp_name][exp_run]['xy'])[::, -1]
             if 'truemin' in data[exp_name][exp_run].keys() and \
-                len(data[exp_name][exp_run]['truemin']) != 0:
+                    len(data[exp_name][exp_run]['truemin']) != 0:
                 energies += data[exp_name][exp_run]['truemin'][0][-1]
             for value in energies:
                 exp_energies[exp_name].append(value)
