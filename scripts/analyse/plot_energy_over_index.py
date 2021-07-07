@@ -46,7 +46,7 @@ def plot_energy_over_index(data):
     plt.xlabel(r'iteration', fontsize=15)
     plt.ylabel(r'$E$', fontsize=15)
     plt.title(r'Calculated energy over iteration for sobol run', fontsize=15)
-    plt.show()
+    
 
 
 def merge_data_from_manual_runs(data):
