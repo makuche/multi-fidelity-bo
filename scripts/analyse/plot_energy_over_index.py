@@ -6,6 +6,8 @@ from pathlib import Path
 from collections import OrderedDict
 
 # For now, script is only used for the gaussian fidelity experiments
+# TODO : Names have been changed, should be updated if plot is going
+# to be recreated
 EXP_NAMES = ['UHF_B1_sobol', 'UHF_B2_manual_sobol']
 EXPS_DATA = {
     'UHF_B1_sobol': OrderedDict(),
