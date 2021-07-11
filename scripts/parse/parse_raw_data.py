@@ -10,16 +10,17 @@ THESIS_DIR = Path(__file__).resolve().parent.parent.parent
 RAW_DATA_DIR = THESIS_DIR.joinpath('data').joinpath('raw')
 PROCESSED_DATA_DIR = THESIS_DIR.joinpath('data').joinpath('processed')
 
+# EXPS = ['a1a1', 'a1a2', 'a1b1', 'UHF_B1_sobol', 'UHF_B2_5iterations',
+#     'UHF_B2_manual_sobol_runs', 'UHF_BOSS']
 # experiments to do the parsing for (TODO : Do this in another script later on)
-EXPS = ['a1a1', 'a1a2', 'a1b1', 'UHF_B1_sobol', 'UHF_B2_5iterations',
-    'UHF_B2_manual_sobol_runs']
-
+EXPS = ['a1a1', 'a1a2', 'a1b1', 'UHF_B1_sobol', 'UHF_BOSS', '2UHFbasic-0']
 
 def main():
     # Test. TODO : Take this part later to another script
     for exp in EXPS:
         exp_path = RAW_DATA_DIR.joinpath(exp)
-        sub_exp_paths = [x for x in exp_path.iterdir() if x.is_dir()]
+        sub_exp_paths = [x for x in exp_path.iterdir() if (x.is_dir() and
+                         'template' not in str(x))]
         for idx, sub_exp in enumerate(sub_exp_paths):
             # Casting the pathlib objects to str, so methods like .split() can be used
             file_path = str(sub_exp.joinpath('boss.out'))
