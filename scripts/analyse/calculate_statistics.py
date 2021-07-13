@@ -1,3 +1,4 @@
+from os import read
 import numpy as np
 import matplotlib.pyplot as plt
 import json
@@ -6,7 +7,7 @@ from pathlib import Path
 import read_write
 
 
-SMALL_SIZE = 15
+SMALL_SIZE = 12
 MEDIUM_SIZE = 20
 LARGE_SIZE = 30
 
@@ -19,11 +20,10 @@ NAMES = ['UHF', 'UHF0', 'HF', 'LF']
 
 
 def main():
-    print(exp_list)
-    plot_y_scatter_trellis(exp_list)
+    y_values = plot_y_scatter_trellis(exp_list)
     acq_times = plot_acq_times_comparison(exp_list)
     plot_acq_times_histograms(acq_times, NAMES)
-    #correlation_matrix = calculate_correlation_matrix(exp_list)
+    correlation_matrix = calculate_correlation_matrix(y_values)
 
 
 def plot_y_scatter_trellis(exp_list, figname='trellis_correlation.pdf',
@@ -50,21 +50,18 @@ def plot_y_scatter_trellis(exp_list, figname='trellis_correlation.pdf',
         exp_runs = [exp for exp in exp_path.iterdir()]
         exp_runs.sort()
         for exp_idx, exp_run in enumerate(exp_runs):
-            with open(f'{exp_run}', 'r') as file:
-                data = json.load(file)
-                # (Prepare - hardcoded mess coming up!)
-                if len(exp_runs) > 1:
-                    # idxs sets the correct indexes to fill in y_values array
-                    if 'exp_5' in str(exp_run):
-                        idxs = (20*exp_idx, 19 + 20*exp_idx)
-                    else:
-                        idxs = (20*exp_idx, 20 + 20*exp_idx)
-                    y_values[idx, idxs[0]:idxs[1]] = np.array(data['xy'])[:,-1]
-                    if 'exp_5' in str(exp_run):
-                        # TODO : Fix this with correct truemin!
-                        y_values[idx, idxs[0]:idxs[1]] -= -202857.96512
+            data = read_write.load_json(exp_run, '')
+            if len(exp_runs) > 1:
+                # idxs sets the correct indexes to fill in y_values array
+                if 'exp_5' in str(exp_run):
+                    idxs = (20*exp_idx, 19 + 20*exp_idx)
+                elif 'exp_6' in str(exp_run):
+                    idxs = (98, 100)
                 else:
-                    y_values[idx,:] = np.array(data['xy'])[:data_points,-1]
+                    idxs = (20*exp_idx, 20 + 20*exp_idx)
+                y_values[idx, idxs[0]:idxs[1]] = np.array(data['xy'])[:,-1]
+            else:
+                y_values[idx,:] = np.array(data['xy'])[:data_points,-1]
 
     fig, axs = plt.subplots(N,N, figsize=(5*N,5*N), constrained_layout=True)
     for i in range(N):
@@ -73,7 +70,7 @@ def plot_y_scatter_trellis(exp_list, figname='trellis_correlation.pdf',
         ax.text(0.5, 0.5, f'{NAMES[i]}',
             horizontalalignment='center',
             verticalalignment='center',
-            fontsize=30,
+            fontsize=45,
             transform=ax.transAxes)
         for j in range(i+1,N):
             ax = axs[i,j]
@@ -87,15 +84,26 @@ def plot_y_scatter_trellis(exp_list, figname='trellis_correlation.pdf',
             ax.spines['bottom'].set_visible(False)
             ax.tick_params(axis = 'both',
               width = 3, length = 4)
+            lims = [
+                np.min([ax.get_xlim(), ax.get_ylim()]),  # min of both axes
+                np.max([ax.get_xlim(), ax.get_ylim()]),  # max of both axes
+                   ]
+
+            # now plot both limits against eachother
+            ax.plot(lims, lims, linestyle='dashed', alpha=0.25, zorder=0)
+            ax.set_aspect('equal')
+            ax.set_xlim(lims)
+            ax.set_ylim(lims)
+
         # remove below-diagonal plots
         for j in range(i):
             ax = axs[i,j]
             ax.axis('off')
     axs[0,N-1].set_xticklabels([])
     axs[0,N-1].set_yticklabels([])
-    plt.show()
     plt.savefig(''.join(('../../results/figs/', figname)))
     plt.close()
+    return y_values
 
 
 def plot_acq_times_comparison(exp_list, figname='acquisition_times.pdf',
@@ -112,19 +120,21 @@ def plot_acq_times_comparison(exp_list, figname='acquisition_times.pdf',
     acq_times = np.zeros((N, num_points))
     for idx, exp_path in enumerate(exp_list):
         exp_runs = [exp for exp in exp_path.iterdir()]
+        exp_runs.sort()
         for exp_idx, exp_run in enumerate(exp_runs):
-            with open(f'{exp_run}', 'r') as file:
-                data = json.load(file)
-                # # (Prepare - hardcoded mess coming up!)
-                if len(exp_runs) > 1:
-                    # idxs sets the correct indexes to fill in y_values array
-                    if 'exp_5' in str(exp_run):
-                        idxs = (20*exp_idx, 19 + 20*exp_idx)
-                    else:
-                        idxs = (20*exp_idx, 20 + 20*exp_idx)
-                    acq_times[idx, idxs[0]:idxs[1]] = np.array(data['acq_times'])
+            data = read_write.load_json(exp_run, '')
+            # # (Prepare - hardcoded mess coming up!)
+            if len(exp_runs) > 1:
+                # idxs sets the correct indexes to fill in y_values array
+                if 'exp_5' in str(exp_run):
+                    idxs = (20*exp_idx, 19 + 20*exp_idx)
+                elif 'exp_6' in str(exp_run):
+                    idxs = (98, 100)
                 else:
-                    acq_times[idx, :] = np.array(data['acq_times'])
+                    idxs = (20*exp_idx, 20 + 20*exp_idx)
+                acq_times[idx, idxs[0]:idxs[1]] = np.array(data['acq_times'])
+            else:
+                acq_times[idx, :] = np.array(data['acq_times'])
 
     fig, ax = plt.subplots(figsize=(9, 9), constrained_layout=True)
     for i in range(N):
@@ -157,21 +167,30 @@ def plot_acq_times_histograms(acq_times, exp_names=NAMES,
                             constrained_layout=True)
     for i in range(acq_times.shape[0]):
         ax = axs[i // 2][i % 2]
-        ax.hist(acq_times[i, :], bins=30, alpha=.5, color='blue')
+        ax.hist(acq_times[i, :], bins=50, alpha=.5, color='blue')
         ax.set_title(exp_names[i])
         ax.set_xlabel(r'$t$ [s]')
     plt.savefig(''.join(('../../results/figs/', figname)))
     plt.close()
 
 
-# TODO : Continue implementing this function
-def calculate_correlation_matrix(exp_list):
-    N = len(exp_list)
-    correlation_matrix = np.zeros((N, N))
-    return
-    for i in range(N):
-        exp_1 = np.array(exp_list[[i]])
-    return correlation_matrix
+def calculate_correlation_matrix(y_values):
+    """Return Pearson correlation coefficients.
+
+    Relationship between correlation coefficient matrix R and the
+    covariance matrix C is:
+
+
+    Args:
+        y_values (ndarray): Array containing the energies for the sobol
+        experiments.
+
+    Returns:
+        correlation_matrix (ndarray): Pearson correlation coefficients
+    """
+    print(NAMES)
+    print(np.corrcoef(y_values).round(decimals=4))
+    return np.corrcoef(y_values)
 
 
 if __name__ == '__main__':

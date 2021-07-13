@@ -57,7 +57,6 @@ def main():
                 best_acqs.append(preprocess.get_best_acquisition(results))
         if truemin_precalculated is False:
             best_acqs = np.array(best_acqs)
-            print("Truemin in run", np.argmin(best_acqs[:, -1]))
             truemin = [best_acqs[np.argmin(best_acqs[:, -1]), :].tolist()]
             for sub_exp_path in sub_exp_paths:
                 results = read_write.load_json('', sub_exp_path)
