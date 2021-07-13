@@ -1,9 +1,0 @@
-Accelerating Bayesian Optimization Structure Search with Multi-Task Machine Learning
-
-Accelerating Bayesian Optimization Structure Search with Multi-Fidelity Machine Learning
-
-Multi-Fidelity Machine Learning for Bayesian Optimization Structure Search
-Boosting the efficienty of BOSS for Multi-Task/Fidelity Machine Learning
-
-Fidelity more for physicists, task for ML
-Boosting/Advancing/Accelerating

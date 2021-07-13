@@ -3,29 +3,23 @@ import matplotlib.pyplot as plt
 import json
 from pathlib import Path
 
+import read_write
+
 
 SMALL_SIZE = 15
 MEDIUM_SIZE = 20
 LARGE_SIZE = 30
 
 THESIS_DIR = Path(__name__).resolve().parent.parent.parent
-# TODO : Take the list of sobol experiments to yaml config file
-SOBOL_EXPERIMENTS = [
-    '2UHFbasic0',
-    '2UHF0basic0',
-    '2HFbasic0',
-    '2LFbasic0'
-                    ]
+CONFIG = read_write.load_yaml(
+    THESIS_DIR.joinpath('scripts/analyse/config'), '/statistics.yaml')
+exp_list = [THESIS_DIR / 'data' / 'processed' /
+            exp for exp in CONFIG['sobol']]
 NAMES = ['UHF', 'UHF0', 'HF', 'LF']
-# Creating a list with all exp_*.json to loop over
-exp_list = [
-    THESIS_DIR / 'data' / 'processed' / exp  for \
-    exp in SOBOL_EXPERIMENTS
-           ]
 
 
 def main():
-
+    print(exp_list)
     plot_y_scatter_trellis(exp_list)
     acq_times = plot_acq_times_comparison(exp_list)
     plot_acq_times_histograms(acq_times, NAMES)
@@ -163,7 +157,7 @@ def plot_acq_times_histograms(acq_times, exp_names=NAMES,
                             constrained_layout=True)
     for i in range(acq_times.shape[0]):
         ax = axs[i // 2][i % 2]
-        ax.hist(acq_times[i, :], bins=3 0, alpha=.5, color='blue')
+        ax.hist(acq_times[i, :], bins=30, alpha=.5, color='blue')
         ax.set_title(exp_names[i])
         ax.set_xlabel(r'$t$ [s]')
     plt.savefig(''.join(('../../results/figs/', figname)))

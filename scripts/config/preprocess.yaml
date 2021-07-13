@@ -1,6 +1,0 @@
-# sources for the y_offset / truemin
-baselines:
-  a1a1: a1a2
-  a1b1: a1b1
-  UHF_B1_sobol: UHF_B1_sobol
-  UHF_B2_manual_sobol_runs: UHF_B1_sobol

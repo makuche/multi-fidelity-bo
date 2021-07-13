@@ -1,0 +1,11 @@
+# pairs of experiment: truemin source
+baselines:
+  # sobol runs: last index 0, baseline runs: last index 1
+  2LFbasic0: 2LFbasic1
+  2LFbasic1: 2LFbasic1
+  2HFbasic0: 2HFbasic1
+  2HFbasic1: 2HFbasic1
+  2UHF0basic0: 2UHF0basic1
+  2UHF0basic1: 2UHF0basic1
+  2UHFbasic0: 2UHFbasic0   # TODO : Change later to 1
+  #2UHFbasic1: 2UHFbasic1
