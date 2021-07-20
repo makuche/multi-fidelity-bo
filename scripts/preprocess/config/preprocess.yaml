@@ -14,9 +14,6 @@ baselines:
 # - [baseline, init. method]
 # - [secondary data, init. method]
 TL_experiments:
-  a3b7_less_init_points:
-    - [a1b2, random]
-    - [a1a3, inorder]
   2UHF0ICM1:
     - [2UHF0basic1, random]
     - [2LFbasic1, inorder]

@@ -57,19 +57,48 @@ def add_init_acq_times(data, init_data_cost):
                 begin -= 1
             end = begin + initpts
             for i in range(begin, end):
-                data['totaltime'][i] += cost[i-begin]
-            for i in range(end, len(data['totaltime'])):
-                data['totaltime'][i] += cost[initpts-1]
+                data['total_time'][i] += cost[i-begin]
+            for i in range(end, len(data['total_time'])):
+                data['total_time'][i] += cost[initpts-1]
         accounted_initpts += initpts
 
-def calculate_convergence_times(data, y_values_idx, varname='gmp'):
-    """[summary]
+
+def calculate_convergence_times(data, idx, measure='gmp'):
+    """Calculates the convergence points/times of a quantity for given
+    tolerances.
 
     Args:
-        data ([type]): [description]
-        y_values_idx ([type]): [description]
+        data (dict): Cotanins the parsed data.
+        idx (int): Dimension where data is located (has to be taken
+        into account for MT runs).
+        measure (str, optional): Quantity to calculate convergence measures
+        for. Defaults to 'gmp'.
     """
-    pass # TODO : Implement
+    if data[measure] == []:
+        return          # This is for interrupted sobol runs (hardcoded fix)
+    values = np.atleast_2d(data[measure])[:, idx][::-1]     # note reversion
+    data[f'iterations_to_{measure}_convergence'] = []       # BO iterations
+    data[f'totaltime_to_{measure}_convergence'] = []        # total runtime
+    data[f'observations_to_{measure}_convergence'] = []     # BO + init iterations
+
+    for tolerance in data['tolerance_levels']:
+        i = 0
+        for value in values:
+            if value > tolerance:
+                break
+            i += 1
+        if i == 0:
+            iterations = None
+            totaltime = None
+            observations = None
+        else:
+            iterations = len(values) - i
+            totaltime = data['total_time'][-i]
+            observations = len(data['xy']) - i
+    data[f'iterations_to_{measure}_convergence'].append(iterations)
+    data[f'totaltime_to_{measure}_convergence'].append(totaltime)
+    data[f'observations_to_{measure}_convergence'].append(observations)
+
 
 
 def calculate_B(data):
@@ -91,6 +120,7 @@ def preprocess(data, tolerance_levels=[0], init_data_cost=None):
         Defaults to None.
     """
     # Add times for the GPR model
+    # TODO : Fix this
     data['model_time'] = [iter_time-acq_time for iter_time, acq_time in
                           zip(data['iter_times'], data['acq_times'])]
 
@@ -101,7 +131,7 @@ def preprocess(data, tolerance_levels=[0], init_data_cost=None):
     # Add offset to the data and add convergence times
     substract_y_offset(data)
     data['tolerance_levels'] = tolerance_levels
-    calculate_convergence_times(data, y_values_idx=-2)
+    calculate_convergence_times(data, idx=-2)
 
     calculate_B(data)
 

@@ -21,8 +21,10 @@ def main():
     # TODO : Take this part later to another script
     # TODO : Loop over the newly created processed_data.json file instead
     # of the current method
-    PARSED_DATA = create_parsed_dict(PROCESSED_DATA_DIR)
+    parsed_data_dict = create_parsed_dict(RAW_DATA_DIR)
 
+    # BUG : parse has to go over ALL experiments, not only baseline
+    # in the beginning
     for exp in CONFIG['baselines'].keys():
         exp_path = RAW_DATA_DIR.joinpath(exp)
         sub_exp_paths = [x for x in exp_path.iterdir() if
@@ -97,7 +99,7 @@ def main():
         TL_experiments = CONFIG['TL_experiments']
         for exp in TL_experiments.keys():
             truemin = []
-            N_exp = len(PARSED_DATA[exp])   # Number of exp. runs
+            N_exp = len(parsed_data_dict[exp])   # Number of exp. runs
             init_times = []                     # additional times per source
 
             # Get data from all used baselines for initialization
@@ -105,34 +107,34 @@ def main():
                 init_time = []
                 baseline_exp = TL_experiments[exp][i][0]
                 baseline_init_strategy = TL_experiments[exp][i][1]
-                baseline_file = PARSED_DATA[baseline_exp][0]
-                data = read_write.load_json(PROCESSED_DATA_DIR /
-                                            f'/{baseline_exp}',
-                                            f'/{baseline_file}.json')
+                baseline_file = parsed_data_dict[baseline_exp][0]
+                data = read_write.load_json(
+                    str(PROCESSED_DATA_DIR) +
+                    f'/{baseline_exp}/', f'{baseline_file}.json')
                 truemin.append(data['truemin'][0])
 
                 if baseline_init_strategy =='self':
                     init_time = None    # This is 'BO random', not used anymore
                 elif baseline_init_strategy == 'random':
-                    for baseline_file in PARSED_DATA[baseline_exp]:
-                        data = read_write.load(PROCESSED_DATA_DIR /
-                                               f'/{baseline_exp}',
-                                               f'/{baseline_file}.json')
-                        additional_time = data['acq_time'].copy()
-                        for i in range(len(data['acq_time'])):
-                            additional_time[i] += sum(np.array(data['acq_time'])[:i])
+                    for baseline_file in parsed_data_dict[baseline_exp]:
+                        data = read_write.load_json(
+                            str(PROCESSED_DATA_DIR) +
+                            f'/{baseline_exp}/', f'{baseline_file}.json')
+                        additional_time = data['acq_times'].copy()
+                        for i in range(len(data['acq_times'])):
+                            additional_time[i] += sum(np.array(data['acq_times'])[:i])
                         init_time.append(additional_time)
                 elif baseline_init_strategy == 'inorder':
-                    for baseline_file in PARSED_DATA[baseline_exp]:
-                        data = read_write.load(PROCESSED_DATA_DIR /
-                                               f'/{baseline_exp}',
-                                               f'/{baseline_file}.json')
-                        init_time.append(data['totaltime'].copy())
+                    for baseline_file in parsed_data_dict[baseline_exp]:
+                        data = read_write.load_json(
+                            str(PROCESSED_DATA_DIR) +
+                            f'/{baseline_exp}/', f'{baseline_file}.json')
+                        init_time.append(data['total_time'].copy())
                 else:
                     raise ValueError("Unknown initialization strategy")
                 init_times.append(init_time)
 
-            for i in range(len(PARSED_DATA[exp])):
+            for i in range(len(parsed_data_dict[exp])):
                 initial_data_cost = []
                 for init_time in init_times:
                     if init_time is None:
@@ -140,13 +142,14 @@ def main():
                     else:
                         N_baselines = len(init_time)
                         initial_data_cost.append(init_time[(i % N_baselines)])
-                filename = PARSED_DATA[exp][i]
-                data = read_write(PROCESSED_DATA_DIR / exp, f'{filename}.json')
+                filename = parsed_data_dict[exp][i]
+                data = read_write.load_json(str(PROCESSED_DATA_DIR) +
+                                            f'/{exp}', f'/{filename}.json')
                 data['truemin'] = truemin
                 data = preprocess.preprocess(data, tolerances,
                                              initial_data_cost)
-                read_write.save_json(data, PROCESSED_DATA_DIR / exp,
-                                     f'{filename}.json')
+                read_write.save_json(data, str(PROCESSED_DATA_DIR) + f'/{exp}',
+                                     f'/{filename}.json')
 
 
 def parse_values(line, typecast=int, sep=None, idx=1):
@@ -168,27 +171,21 @@ def parse_values(line, typecast=int, sep=None, idx=1):
     return [typecast(val.strip(sep)) for val in line.split(sep)[idx:]]
 
 
-def create_parsed_dict(processed_data_folder):
-    processed_data = dict()
-    for exp in processed_data_folder.iterdir():
-        if exp.is_dir():
+def create_parsed_dict(data_folder):
+    data_dict = dict()
+    for exp in data_folder.iterdir():
+        if exp.is_dir() and 'misc' not in str(exp):
             exp_runs = []
             for exp_run in exp.iterdir():
-                if exp_run.is_file():
-                    exp_run = str(exp_run).split(sep='/')[-1]
-                    exp_run = exp_run.split(sep='.')[0]
+                if exp_run.is_dir() and 'exp' in str(exp_run):
+                    exp_run = str(exp_run).split('/')[-1]
                     exp_runs.append(exp_run)
-
             exp_name = str(exp).split(sep='/')[-1]
-            # The following sorts numerically instead of alphabetically,
-            # e.g. [exp_1, exp_2, ..., exp_10, ...] instead of
-            # [exp_1, exp_10, exp_11, ..., exp_2, ...]
             exp_runs = sorted(exp_runs, key=lambda run:
                               int(run.split(sep='_')[-1]))
-            processed_data[exp_name] = exp_runs
-    read_write.save_json(processed_data, PROCESSED_DATA_DIR,
-                         '/parsed_dict.json')
-    return processed_data
+            data_dict[exp_name] = exp_runs
+    read_write.save_json(data_dict, PROCESSED_DATA_DIR, '/parsed_dict.json')
+    return data_dict
 
 
 def save_to_json(path, file_name, exp_name, json_path=None, json_name=None):
