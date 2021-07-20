@@ -8,10 +8,10 @@ from collections import OrderedDict
 # For now, script is only used for the gaussian fidelity experiments
 # TODO : Names have been changed, should be updated if plot is going
 # to be recreated
-EXP_NAMES = ['UHF_B1_sobol', 'UHF_B2_manual_sobol']
+EXP_NAMES = ['2UHF0basic0', '2UHFbasic0']
 EXPS_DATA = {
-    'UHF_B1_sobol': OrderedDict(),
-    'UHF_B2_manual_sobol': OrderedDict(),
+    '2UHF0basic0': OrderedDict(),
+    '2UHFbasic0': OrderedDict(),
 }
 
 THESIS_FOLDER = Path(__file__).resolve().parent.parent.parent
@@ -34,12 +34,12 @@ def main():
 
 def plot_energy_over_index(data):
     fig, ax = plt.subplots(figsize=(13,8))
-    energy_shift = data['UHF_B1_sobol'][0] - data['UHF_B2_manual_sobol'][0]
+    energy_shift = data['2UHF0basic0'][0] - data['2UHFbasic0'][0]
     for idx, exp_name in enumerate(data):
         energies = data[exp_name]
         plt.plot(np.arange(len(energies)),
                  energies, c=COLORS[idx], label=exp_name)
-        if exp_name == 'UHF_B2_manual_sobol':
+        if exp_name == '2UHFbasic0':
             energies += energy_shift
             plt.plot(np.arange(len(energies)),
                      energies, c=COLORS[idx], label='shifted UHF_B2')
@@ -47,7 +47,7 @@ def plot_energy_over_index(data):
     plt.xlabel(r'iteration', fontsize=15)
     plt.ylabel(r'$E$', fontsize=15)
     plt.title(r'Calculated energy over iteration for sobol run', fontsize=15)
-    
+    plt.show()
 
 def merge_data_from_manual_runs(data):
     exp_energies = {key: [] for key in EXP_NAMES}

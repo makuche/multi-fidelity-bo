@@ -46,3 +46,4 @@ def load_yaml(path, filename):
     """
     with open(f'{path}{filename}', 'r') as f:
         return yaml.load(f, Loader=yaml.FullLoader)
+

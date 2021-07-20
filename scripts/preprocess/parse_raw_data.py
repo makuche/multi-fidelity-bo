@@ -10,8 +10,8 @@ import read_write
 
 # folder locations for raw and processed data
 THESIS_DIR = Path(__file__).resolve().parent.parent.parent
-RAW_DATA_DIR = THESIS_DIR.joinpath('data').joinpath('raw')
-PROCESSED_DATA_DIR = THESIS_DIR.joinpath('data').joinpath('processed')
+RAW_DATA_DIR = THESIS_DIR / 'data' / 'raw'
+PROCESSED_DATA_DIR = THESIS_DIR / 'data' / 'processed'
 # CONFIG contains experiment names and truemin sources
 CONFIG = read_write.load_yaml(
     THESIS_DIR.joinpath('scripts/preprocess/config'), '/preprocess.yaml')
@@ -19,6 +19,10 @@ CONFIG = read_write.load_yaml(
 
 def main():
     # TODO : Take this part later to another script
+    # TODO : Loop over the newly created processed_data.json file instead
+    # of the current method
+    PARSED_DATA = create_parsed_dict(PROCESSED_DATA_DIR)
+
     for exp in CONFIG['baselines'].keys():
         exp_path = RAW_DATA_DIR.joinpath(exp)
         sub_exp_paths = [x for x in exp_path.iterdir() if
@@ -40,6 +44,7 @@ def main():
 
     # First, loop over the truemin source baseline experiments
     baselines = CONFIG['baselines']
+    tolerances = CONFIG['tolerances']
     for exp in baselines:
         best_acqs = []
         sub_exp_paths = [
@@ -87,6 +92,62 @@ def main():
                 results = preprocess.preprocess(results)
                 read_write.save_json(results, sub_exp_path, '')
 
+    # TL experiments
+    if 'TL_experiments' in CONFIG:
+        TL_experiments = CONFIG['TL_experiments']
+        for exp in TL_experiments.keys():
+            truemin = []
+            N_exp = len(PARSED_DATA[exp])   # Number of exp. runs
+            init_times = []                     # additional times per source
+
+            # Get data from all used baselines for initialization
+            for i in range(len(TL_experiments[exp])):
+                init_time = []
+                baseline_exp = TL_experiments[exp][i][0]
+                baseline_init_strategy = TL_experiments[exp][i][1]
+                baseline_file = PARSED_DATA[baseline_exp][0]
+                data = read_write.load_json(PROCESSED_DATA_DIR /
+                                            f'/{baseline_exp}',
+                                            f'/{baseline_file}.json')
+                truemin.append(data['truemin'][0])
+
+                if baseline_init_strategy =='self':
+                    init_time = None    # This is 'BO random', not used anymore
+                elif baseline_init_strategy == 'random':
+                    for baseline_file in PARSED_DATA[baseline_exp]:
+                        data = read_write.load(PROCESSED_DATA_DIR /
+                                               f'/{baseline_exp}',
+                                               f'/{baseline_file}.json')
+                        additional_time = data['acq_time'].copy()
+                        for i in range(len(data['acq_time'])):
+                            additional_time[i] += sum(np.array(data['acq_time'])[:i])
+                        init_time.append(additional_time)
+                elif baseline_init_strategy == 'inorder':
+                    for baseline_file in PARSED_DATA[baseline_exp]:
+                        data = read_write.load(PROCESSED_DATA_DIR /
+                                               f'/{baseline_exp}',
+                                               f'/{baseline_file}.json')
+                        init_time.append(data['totaltime'].copy())
+                else:
+                    raise ValueError("Unknown initialization strategy")
+                init_times.append(init_time)
+
+            for i in range(len(PARSED_DATA[exp])):
+                initial_data_cost = []
+                for init_time in init_times:
+                    if init_time is None:
+                        initial_data_cost.append(None)
+                    else:
+                        N_baselines = len(init_time)
+                        initial_data_cost.append(init_time[(i % N_baselines)])
+                filename = PARSED_DATA[exp][i]
+                data = read_write(PROCESSED_DATA_DIR / exp, f'{filename}.json')
+                data['truemin'] = truemin
+                data = preprocess.preprocess(data, tolerances,
+                                             initial_data_cost)
+                read_write.save_json(data, PROCESSED_DATA_DIR / exp,
+                                     f'{filename}.json')
+
 
 def parse_values(line, typecast=int, sep=None, idx=1):
     """Returns a list of parsed values from a line in the output file.
@@ -105,6 +166,29 @@ def parse_values(line, typecast=int, sep=None, idx=1):
     """
     # .strip removes spaces from the beginning and end of the string
     return [typecast(val.strip(sep)) for val in line.split(sep)[idx:]]
+
+
+def create_parsed_dict(processed_data_folder):
+    processed_data = dict()
+    for exp in processed_data_folder.iterdir():
+        if exp.is_dir():
+            exp_runs = []
+            for exp_run in exp.iterdir():
+                if exp_run.is_file():
+                    exp_run = str(exp_run).split(sep='/')[-1]
+                    exp_run = exp_run.split(sep='.')[0]
+                    exp_runs.append(exp_run)
+
+            exp_name = str(exp).split(sep='/')[-1]
+            # The following sorts numerically instead of alphabetically,
+            # e.g. [exp_1, exp_2, ..., exp_10, ...] instead of
+            # [exp_1, exp_10, exp_11, ..., exp_2, ...]
+            exp_runs = sorted(exp_runs, key=lambda run:
+                              int(run.split(sep='_')[-1]))
+            processed_data[exp_name] = exp_runs
+    read_write.save_json(processed_data, PROCESSED_DATA_DIR,
+                         '/parsed_dict.json')
+    return processed_data
 
 
 def save_to_json(path, file_name, exp_name, json_path=None, json_name=None):

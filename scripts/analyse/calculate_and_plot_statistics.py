@@ -1,7 +1,5 @@
-from os import read
 import numpy as np
 import matplotlib.pyplot as plt
-import json
 from pathlib import Path
 
 import read_write
@@ -168,9 +166,15 @@ def plot_acq_times_histograms(acq_times, exp_names=NAMES,
     for i in range(acq_times.shape[0]):
         ax = axs[i // 2][i % 2]
         ax.hist(acq_times[i, :], bins=50, alpha=.5, color='blue')
+        ax.axvline(acq_times[i, :].mean(), color='k', linestyle='dashed',
+                   linewidth=3, label='mean')
+        ax.axvline(np.median(acq_times[i, :]), color='r', linestyle='dashed',
+                   linewidth=3, alpha=.3, label='median')
         ax.set_title(exp_names[i])
         ax.set_xlabel(r'$t$ [s]')
+    axs[N-1, N-1].legend()
     plt.savefig(''.join(('../../results/figs/', figname)))
+    plt.show()
     plt.close()
 
 
