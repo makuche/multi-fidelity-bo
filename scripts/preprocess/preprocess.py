@@ -79,7 +79,8 @@ def calculate_convergence_times(data, idx, measure='gmp'):
     values = np.atleast_2d(data[measure])[:, idx][::-1]     # note reversion
     data[f'iterations_to_{measure}_convergence'] = []       # BO iterations
     data[f'totaltime_to_{measure}_convergence'] = []        # total runtime
-    data[f'observations_to_{measure}_convergence'] = []     # BO + init iterations
+    # TODO : Check the following, if correctly calculated
+    data[f'observations_to_{measure}_convergence'] = []     # BO + init points
 
     for tolerance in data['tolerance_levels']:
         i = 0
@@ -95,9 +96,9 @@ def calculate_convergence_times(data, idx, measure='gmp'):
             iterations = len(values) - i
             totaltime = data['total_time'][-i]
             observations = len(data['xy']) - i
-    data[f'iterations_to_{measure}_convergence'].append(iterations)
-    data[f'totaltime_to_{measure}_convergence'].append(totaltime)
-    data[f'observations_to_{measure}_convergence'].append(observations)
+        data[f'iterations_to_{measure}_convergence'].append(iterations)
+        data[f'totaltime_to_{measure}_convergence'].append(totaltime)
+        data[f'observations_to_{measure}_convergence'].append(observations)
 
 
 
@@ -120,7 +121,8 @@ def preprocess(data, tolerance_levels=[0], init_data_cost=None):
         Defaults to None.
     """
     # Add times for the GPR model
-    # TODO : Fix this
+    # BUG : For TL, the model_time is often negative, this doesn't
+    # have an impact on the plots
     data['model_time'] = [iter_time-acq_time for iter_time, acq_time in
                           zip(data['iter_times'], data['acq_times'])]
 
