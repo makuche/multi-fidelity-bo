@@ -1,9 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 from pathlib import Path
 
 import read_write
 
+
+verbose = False
+show_plots = False
 
 SMALL_SIZE = 12
 MEDIUM_SIZE = 20
@@ -14,15 +18,15 @@ CONFIG = read_write.load_yaml(
     THESIS_DIR.joinpath('scripts/analyse/config'), '/statistics.yaml')
 exp_list = [THESIS_DIR / 'data' / 'processed' /
             exp for exp in CONFIG['sobol']]
-NAMES = ['UHF', 'UHF0', 'HF', 'LF']
-
+#NAMES = ['UHF', 'UHF0', 'HF', 'LF']
+NAMES = ['UHF', 'HF', 'LF']
 
 def main():
     y_values = plot_y_scatter_trellis(exp_list)
     acq_times = plot_acq_times_comparison(exp_list)
     plot_acq_times_histograms(acq_times, NAMES)
     correlation_matrix = calculate_correlation_matrix(y_values)
-
+    summary_statistics = calculate_summary_statistics(y_values)
 
 def plot_y_scatter_trellis(exp_list, figname='trellis_correlation.pdf',
                            data_points=100):
@@ -161,20 +165,40 @@ def plot_acq_times_comparison(exp_list, figname='acquisition_times.pdf',
 def plot_acq_times_histograms(acq_times, exp_names=NAMES,
                               figname='acq_times_histograms.pdf'):
     N = acq_times.shape[0] // 2
-    fig, axs = plt.subplots(nrows=N, ncols= N, figsize=(9, 9),
-                            constrained_layout=True)
-    for i in range(acq_times.shape[0]):
-        ax = axs[i // 2][i % 2]
-        ax.hist(acq_times[i, :], bins=50, alpha=.5, color='blue')
-        ax.axvline(acq_times[i, :].mean(), color='k', linestyle='dashed',
-                   linewidth=3, label='mean')
-        ax.axvline(np.median(acq_times[i, :]), color='r', linestyle='dashed',
-                   linewidth=3, alpha=.3, label='median')
-        ax.set_title(exp_names[i])
-        ax.set_xlabel(r'$t$ [s]')
-    axs[N-1, N-1].legend()
+    if N % 2 == 0:
+        N = acq_times.shape[0] // 2
+        fig, axs = plt.subplots(nrows=N, ncols= N, figsize=(9, 9),
+                                constrained_layout=True)
+        for i in range(acq_times.shape[0]):
+            ax = axs[i // 2][i % 2]
+            ax.hist(acq_times[i, :], bins=50, alpha=.5, color='blue')
+            ax.axvline(acq_times[i, :].mean(), color='k', linestyle='dashed',
+                    linewidth=3, label='mean')
+            ax.axvline(np.median(acq_times[i, :]), color='r', linestyle='dashed',
+                    linewidth=3, alpha=.3, label='median')
+            ax.set_title(exp_names[i])
+            ax.set_xlabel(r'$t$ [s]')
+            axs[N-1, N-1].legend()
+    elif N % 2 == 1:
+        N = acq_times.shape[0]
+        fig, axs = plt.subplots(nrows=1, ncols= N, figsize=(16, 6),
+                                constrained_layout=True)
+        for i in range(acq_times.shape[0]):
+            ax = axs[i]
+            ax.hist(acq_times[i, :], bins=50, alpha=.5, color='blue')
+            ax.axvline(acq_times[i, :].mean(), color='k', linestyle='dashed',
+                    linewidth=3,
+                    label=f'mean: {round(acq_times[i, :].mean(), 2)}')
+            ax.axvline(np.median(acq_times[i, :]), color='r',
+                       linestyle='dashed', linewidth=3, alpha=.3,
+                       label=f'median: {round(np.median(acq_times[i, :]), 2)}')
+            ax.set_title(exp_names[i])
+            ax.set_xlabel(r'$t$ [s]')
+            axs[i].legend()
+
     plt.savefig(''.join(('../../results/figs/', figname)))
-    plt.show()
+    if show_plots:
+        plt.show()
     plt.close()
 
 
@@ -192,10 +216,42 @@ def calculate_correlation_matrix(y_values):
     Returns:
         correlation_matrix (ndarray): Pearson correlation coefficients
     """
-    print(NAMES)
-    print(np.corrcoef(y_values).round(decimals=4))
+    if verbose:
+        print("Correlation matrix, experiments in the order:\n", *NAMES)
+        print(np.corrcoef(y_values).round(decimals=4))
     return np.corrcoef(y_values)
 
 
+def calculate_summary_statistics(y_values):
+    """Return max, min, var and amplitude of the y_value arrays.
+
+    Args:
+        y_values (ndarray): Array containing the energies for the sobol
+        experiments.
+
+    Returns:
+        max, min, var, amplitude (ndarray): Array containing the quantities.
+    """
+    summary_statistics = np.zeros((y_values.shape[0], 5))
+    for exp_idx in range(y_values.shape[0]):
+        mean = np.mean(y_values[exp_idx, :])
+        max_val = max(y_values[exp_idx, :])
+        min_val = min(y_values[exp_idx, :])
+        amplitude = 0.5 * (max_val - min_val)
+        var = np.var(y_values[exp_idx, :])
+        stats = np.array((mean, var, min_val, max_val, amplitude))
+        summary_statistics[exp_idx] = stats
+    if verbose:
+        print("Experiments in the order:\n ", *NAMES)
+        print("Mean, variance, min, max, amplitude")
+        print(summary_statistics)
+    return summary_statistics
+
+
 if __name__ == '__main__':
+    args = sys.argv
+    if '-v' or '--verbose' in sys.argv:
+        verbose = True
+    if '--show_plots' in sys.argv:
+        show_plots = True
     main()

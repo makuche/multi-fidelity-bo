@@ -7,8 +7,8 @@ baselines:
   2HFbasic1: 2HFbasic1
   2UHF0basic0: 2UHF0basic1
   2UHF0basic1: 2UHF0basic1
-  2UHFbasic0: 2UHFbasic0   # TODO : Change later to 1
-  #2UHFbasic1: 2UHFbasic1
+  2UHFbasic0: 2UHFbasic1   # TODO : Change later to 1
+  2UHFbasic1: 2UHFbasic1
 
 # TL experiment:
 # - [baseline, init. method]
