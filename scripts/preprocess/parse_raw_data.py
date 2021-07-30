@@ -2,7 +2,6 @@ import numpy as np
 import json
 import os
 import preprocess
-import copy
 from pathlib import Path
 
 import read_write
@@ -18,26 +17,34 @@ CONFIG = read_write.load_yaml(
 
 
 def main():
-    # TODO : Take this part later to another script
-    # TODO : Loop over the newly created processed_data.json file instead
-    # of the current method
+    PROCESSED_DATA_DIR.mkdir(exist_ok=True)
     parsed_data_dict = create_parsed_dict(RAW_DATA_DIR)
+    all_experiments = list(parsed_data_dict.keys())
 
-    all_experiments = list(set(CONFIG['baselines'].keys()) |
-        set(CONFIG['TL_experiments'].keys()))
     for exp in all_experiments:
         exp_path = RAW_DATA_DIR.joinpath(exp)
-        sub_exp_paths = [x for x in exp_path.iterdir() if
-                         x.is_dir() and 'exp' in str(x)]
-        sub_exp_paths.sort()
-        for idx, sub_exp in enumerate(sub_exp_paths):
-            # Casting the pathlib objects to str, so methods like .split()
-            # can be used
-            file_path = str(sub_exp.joinpath('boss.out'))
-            str_ = f'exp_{idx+1}.json'
-            PROCESSED_DATA_DIR.joinpath(exp).mkdir(parents=True, exist_ok=True)
-            json_path = str(PROCESSED_DATA_DIR.joinpath(exp).joinpath(str_))
-            parse(file_path, exp, json_path)
+        exp_batch = [x for x in exp_path.iterdir() if
+                     x.is_dir() and 'exp' in str(x)]
+        exp_batch.sort()
+        for idx, single_run in enumerate(exp_batch):
+            subruns = [x for x in single_run.iterdir() if
+                       x.is_dir() and 'subrun' in str(x)]
+            if len(subruns) == 0:
+                file_path = str(single_run.joinpath('boss.out'))
+                str_ = f'exp_{idx+1}.json'
+                PROCESSED_DATA_DIR.joinpath(exp).mkdir(parents=True,
+                                                       exist_ok=True)
+                json_path = str(PROCESSED_DATA_DIR.joinpath(exp, str_))
+                parse(file_path, exp, json_path)
+            else:
+                for subrun in subruns:
+                    file_path = str(subrun.joinpath('boss.out'))
+                    subrun_str = str(subrun).split('/')[-1]
+                    str_ = f'exp_{idx+1}_{subrun_str}.json'
+                    PROCESSED_DATA_DIR.joinpath(exp).mkdir(parents=True,
+                                                       exist_ok=True)
+                    json_path = str(PROCESSED_DATA_DIR.joinpath(exp, str_))
+                    parse(file_path, exp, json_path)
 
     # Once all the raw data is processed, substract the truemin
     # from the data. This needs to be done in another loop, since
@@ -67,7 +74,6 @@ def main():
             for sub_exp_path in sub_exp_paths:
                 results = read_write.load_json('', sub_exp_path)
                 results['truemin'] = truemin
-                print("Saving to ...", str(sub_exp_path))
                 results = preprocess.preprocess(results, tolerances)
                 read_write.save_json(results, sub_exp_path, '')
 
@@ -89,16 +95,15 @@ def main():
                 # experiment, therefore access source_path[0]
                 source = read_write.load_json('', source_path[0])
                 results['truemin'] = source['truemin']
-                print("Saving to ...", str(sub_exp_path))
                 results = preprocess.preprocess(results, tolerances)
                 read_write.save_json(results, sub_exp_path, '')
 
+    # TODO : Adjust this for the subrun structure, once data is available
     # TL experiments
     if 'TL_experiments' in CONFIG:
         TL_experiments = CONFIG['TL_experiments']
         for exp in TL_experiments.keys():
             truemin = []
-            N_exp = len(parsed_data_dict[exp])   # Number of exp. runs
             init_times = []                     # additional times per source
 
             # Get data from all used baselines for initialization
@@ -121,7 +126,8 @@ def main():
                             f'/{baseline_exp}/', f'{baseline_file}.json')
                         additional_time = data['acq_times'].copy()
                         for i in range(len(data['acq_times'])):
-                            additional_time[i] += sum(np.array(data['acq_times'])[:i])
+                            additional_time[i] += \
+                                sum(np.array(data['acq_times'])[:i])
                         init_time.append(additional_time)
                 elif baseline_init_strategy == 'inorder':
                     for baseline_file in parsed_data_dict[baseline_exp]:
@@ -171,6 +177,14 @@ def parse_values(line, typecast=int, sep=None, idx=1):
 
 
 def create_parsed_dict(data_folder):
+    """Create a dict, listing the experiments batch.
+
+    Args:
+        data_folder (str): Path to raw data.
+
+    Returns:
+        dict: Dict, listing the runs per experiments.
+    """
     data_dict = dict()
     for exp in data_folder.iterdir():
         if exp.is_dir() and 'misc' not in str(exp):

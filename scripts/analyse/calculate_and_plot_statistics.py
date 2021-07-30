@@ -18,8 +18,8 @@ CONFIG = read_write.load_yaml(
     THESIS_DIR.joinpath('scripts/analyse/config'), '/statistics.yaml')
 exp_list = [THESIS_DIR / 'data' / 'processed' /
             exp for exp in CONFIG['sobol']]
-#NAMES = ['UHF', 'UHF0', 'HF', 'LF']
 NAMES = ['UHF', 'HF', 'LF']
+
 
 def main():
     y_values = plot_y_scatter_trellis(exp_list)
@@ -27,6 +27,7 @@ def main():
     plot_acq_times_histograms(acq_times, NAMES)
     correlation_matrix = calculate_correlation_matrix(y_values)
     summary_statistics = calculate_summary_statistics(y_values)
+
 
 def plot_y_scatter_trellis(exp_list, figname='trellis_correlation.pdf',
                            data_points=100):
@@ -51,6 +52,7 @@ def plot_y_scatter_trellis(exp_list, figname='trellis_correlation.pdf',
     for idx, exp_path in enumerate(exp_list):
         exp_runs = [exp for exp in exp_path.iterdir()]
         exp_runs.sort()
+        # TODO : Remove hardcoded part
         for exp_idx, exp_run in enumerate(exp_runs):
             data = read_write.load_json(exp_run, '')
             if len(exp_runs) > 1:
