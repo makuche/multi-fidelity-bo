@@ -15,9 +15,13 @@ PROCESSED_DATA_DIR = THESIS_DIR / 'data' / 'processed'
 CONFIG = read_write.load_yaml(
     THESIS_DIR.joinpath('scripts/preprocess/config'), '/preprocess.yaml')
 
+verbose = False
+
 
 def main():
-    PROCESSED_DATA_DIR.mkdir(exist_ok=True)
+
+    rm_tree(PROCESSED_DATA_DIR)     # removing existing directory if it exists
+    PROCESSED_DATA_DIR.mkdir()
     parsed_data_dict = create_parsed_dict(RAW_DATA_DIR)
     all_experiments = list(parsed_data_dict.keys())
 
@@ -98,64 +102,89 @@ def main():
                 results = preprocess.preprocess(results, tolerances)
                 read_write.save_json(results, sub_exp_path, '')
 
-    # TODO : Adjust this for the subrun structure, once data is available
-    # TL experiments
-    if 'TL_experiments' in CONFIG:
-        TL_experiments = CONFIG['TL_experiments']
-        for exp in TL_experiments.keys():
-            truemin = []
-            init_times = []                     # additional times per source
+    # merge data from the subruns (only baseline runs)
+    for exp in baselines:
+        if '_r' in exp:
+            print("Merging experiment ", exp, "...")
+            all_subrun_paths = sorted([path for path in
+                                   PROCESSED_DATA_DIR.joinpath(exp).iterdir()])
+            print("All experiments listed:", all_subrun_paths)
+            for sub_exp in parsed_data_dict[exp]:
+                subrun_paths = [path for path in all_subrun_paths if
+                    sub_exp in str(path)]
+                print("Merging subrun ", sub_exp, "with subruns",
+                    subrun_paths, "...")
+                merge_subrun_data(subrun_paths, sub_exp)
 
-            # Get data from all used baselines for initialization
-            for i in range(len(TL_experiments[exp])):
-                init_time = []
-                baseline_exp = TL_experiments[exp][i][0]
-                baseline_init_strategy = TL_experiments[exp][i][1]
-                baseline_file = parsed_data_dict[baseline_exp][0]
-                data = read_write.load_json(
-                    str(PROCESSED_DATA_DIR) +
-                    f'/{baseline_exp}/', f'{baseline_file}.json')
-                truemin.append(data['truemin'][0])
 
-                if baseline_init_strategy =='self':
-                    init_time = None    # This is 'BO random', not used anymore
-                elif baseline_init_strategy == 'random':
-                    for baseline_file in parsed_data_dict[baseline_exp]:
-                        data = read_write.load_json(
-                            str(PROCESSED_DATA_DIR) +
-                            f'/{baseline_exp}/', f'{baseline_file}.json')
-                        additional_time = data['acq_times'].copy()
-                        for i in range(len(data['acq_times'])):
-                            additional_time[i] += \
-                                sum(np.array(data['acq_times'])[:i])
-                        init_time.append(additional_time)
-                elif baseline_init_strategy == 'inorder':
-                    for baseline_file in parsed_data_dict[baseline_exp]:
-                        data = read_write.load_json(
-                            str(PROCESSED_DATA_DIR) +
-                            f'/{baseline_exp}/', f'{baseline_file}.json')
-                        init_time.append(data['total_time'].copy())
-                else:
-                    raise ValueError("Unknown initialization strategy")
-                init_times.append(init_time)
+    # # TODO : Adjust this for the subrun structure, once data is available
+    # # TL experiments
+    # if 'TL_experiments' in CONFIG:
+    #     TL_experiments = CONFIG['TL_experiments']
+    #     for exp in TL_experiments.keys():
+    #         truemin = []
+    #         init_times = []                     # additional times per source
 
-            for i in range(len(parsed_data_dict[exp])):
-                initial_data_cost = []
-                for init_time in init_times:
-                    if init_time is None:
-                        initial_data_cost.append(None)
-                    else:
-                        N_baselines = len(init_time)
-                        initial_data_cost.append(init_time[(i % N_baselines)])
-                filename = parsed_data_dict[exp][i]
-                data = read_write.load_json(str(PROCESSED_DATA_DIR) +
-                                            f'/{exp}', f'/{filename}.json')
-                data['truemin'] = truemin
-                data = preprocess.preprocess(data, tolerances,
-                                             initial_data_cost)
-                read_write.save_json(data, str(PROCESSED_DATA_DIR) + f'/{exp}',
-                                     f'/{filename}.json')
+    #         # Get data from all used baselines for initialization
+    #         for i in range(len(TL_experiments[exp])):
+    #             init_time = []
+    #             baseline_exp = TL_experiments[exp][i][0]
+    #             baseline_init_strategy = TL_experiments[exp][i][1]
+    #             baseline_file = parsed_data_dict[baseline_exp][0]
+    #             data = read_write.load_json(
+    #                 str(PROCESSED_DATA_DIR) +
+    #                 f'/{baseline_exp}/', f'{baseline_file}.json')
+    #             truemin.append(data['truemin'][0])
 
+    #             if baseline_init_strategy =='self':
+    #                 init_time = None    # This is 'BO random', not used anymore
+    #             elif baseline_init_strategy == 'random':
+    #                 for baseline_file in parsed_data_dict[baseline_exp]:
+    #                     data = read_write.load_json(
+    #                         str(PROCESSED_DATA_DIR) +
+    #                         f'/{baseline_exp}/', f'{baseline_file}.json')
+    #                     additional_time = data['acq_times'].copy()
+    #                     for i in range(len(data['acq_times'])):
+    #                         additional_time[i] += \
+    #                             sum(np.array(data['acq_times'])[:i])
+    #                     init_time.append(additional_time)
+    #             elif baseline_init_strategy == 'inorder':
+    #                 for baseline_file in parsed_data_dict[baseline_exp]:
+    #                     data = read_write.load_json(
+    #                         str(PROCESSED_DATA_DIR) +
+    #                         f'/{baseline_exp}/', f'{baseline_file}.json')
+    #                     init_time.append(data['total_time'].copy())
+    #             else:
+    #                 raise ValueError("Unknown initialization strategy")
+    #             init_times.append(init_time)
+
+    #         for i in range(len(parsed_data_dict[exp])):
+    #             initial_data_cost = []
+    #             for init_time in init_times:
+    #                 if init_time is None:
+    #                     initial_data_cost.append(None)
+    #                 else:
+    #                     N_baselines = len(init_time)
+    #                     initial_data_cost.append(init_time[(i % N_baselines)])
+    #             filename = parsed_data_dict[exp][i]
+    #             data = read_write.load_json(str(PROCESSED_DATA_DIR) +
+    #                                         f'/{exp}', f'/{filename}.json')
+    #             data['truemin'] = truemin
+    #             data = preprocess.preprocess(data, tolerances,
+    #                                          initial_data_cost)
+    #             read_write.save_json(data, str(PROCESSED_DATA_DIR) + f'/{exp}',
+    #                                  f'/{filename}.json')
+
+def rm_tree(pth: Path):
+    try:
+        for child in pth.iterdir():
+            if child.is_file():
+                child.unlink()
+            else:
+                rm_tree(child)
+        pth.rmdir()
+    except FileNotFoundError:
+        return
 
 def parse_values(line, typecast=int, sep=None, idx=1):
     """Returns a list of parsed values from a line in the output file.
@@ -177,7 +206,7 @@ def parse_values(line, typecast=int, sep=None, idx=1):
 
 
 def create_parsed_dict(data_folder):
-    """Create a dict, listing the experiments batch.
+    """Create a dict, listing all the runs for an experiment.
 
     Args:
         data_folder (str): Path to raw data.
@@ -221,7 +250,8 @@ def save_to_json(path, file_name, exp_name, json_path=None, json_name=None):
     # path to the users home dir
     with open(os.path.expanduser(f'{json_path}{json_name}.json'), 'w') \
         as output_file:
-        print(f'Writing to file {json_path}{json_name}.json ...')
+        if verbose:
+            print(f'Writing to file {json_path}{json_name}.json ...')
         json.dump(results, output_file, indent=4)
 
 
@@ -239,7 +269,6 @@ def read_and_preprocess_boss_output(path, file_name, exp_name):
                'iterpts': None,
                'bounds': None,
                'num_tasks': 1,
-               'obs': None,           # TODO : Check what that was
                'acq_times': None,
                'best_acq': None,
                'gmp': None,
@@ -339,7 +368,7 @@ def read_and_preprocess_boss_output(path, file_name, exp_name):
 
     # 0 stands for the init points of the secondary task
     # (TODO : check if thats correct)
-    if len(results['initpts']) == 1: # add 0 secondary initpts
+    if len(results['initpts']) == 1:  # add 0 secondary initpts
         results['initpts'].append(0)
 
     return results
@@ -355,6 +384,123 @@ def parse(input_file_path, exp_name, output_file_path):
     """
     output_file = output_file_path.split('.json')[0]
     save_to_json('', input_file_path, exp_name, '', output_file)
+
+
+def merge_subrun_data(subrun_file_paths, exp_idx):
+    """Parses the subruns json files, cleans and merges
+    the statistics. Saves the merged statistics as a single .json file.
+
+    Args:
+        subrun_file_paths (str): directory containing subruns
+        exp_idx (str): Experiment to merge (e.g. exp_1)
+    """
+    to_copy_from_first_subrun = ['header', 'truemin',
+                                 'thetainit', 'thetapriorparam', 'name',
+                                 'bounds', 'dim', 'tasks', 'kernel',
+                                 'num_tasks', 'run_completed',
+                                 'tolerance_levels', 'yrange', 'initpts']
+    to_copy_from_last_subrun = ['xy']
+    to_stack = ['GP_hyperparam', 'acq_times', 'best_acq', 'gmp_convergence']
+    to_stack_and_clean = ['gmp', 'iterpts', 'iter_times',
+                          'iterations_to_gmp_convergence', 'model_time',
+                          'observations_to_gmp_convergence', 'total_time',
+                          'totaltime_to_gmp_convergence']
+
+    all_arguments = to_copy_from_first_subrun + to_copy_from_last_subrun + \
+                    to_stack + to_stack_and_clean
+
+    merged_results = dict.fromkeys([key for key in all_arguments])
+    subrun_results = []
+
+    # First part: Just copying (or stacking) the data
+    for subrun_path in subrun_file_paths:
+        subrun_results.append(read_write.load_json(subrun_path, ''))
+
+    for key in to_copy_from_first_subrun:
+        merged_results[key] = subrun_results[0][key]
+
+    for key in to_copy_from_last_subrun:
+        merged_results[key] = subrun_results[-1][key]
+
+    for key in to_stack:
+        merged_results[key] = []
+        for subrun in subrun_results:
+            values = subrun[key]
+            for value in values:
+                merged_results[key].append(value)
+
+    # Second part : Stack and clean the data, dependent on the key
+    for key in to_stack_and_clean:
+        merged_results[key] = []
+        if key == 'gmp':
+            for idx, subrun in enumerate(subrun_results):
+                values = subrun[key]
+                if idx != 0:
+                    values = values[1:] # First gmp from next subrun should
+                                        # be ignored, this occurs twice
+                for value in values:
+                    merged_results[key].append(value)
+        if key == 'iterpts':
+            merged_results[key].append(
+                len(subrun_results) * subrun_results[0][key][0])
+        if key == 'iter_times':
+            iterpts = subrun_results[0]['iterpts'][0]
+            initpts = subrun_results[0]['initpts'][0]
+            for idx, subrun in enumerate(subrun_results):
+                values = subrun[key]
+                start = (idx > 0)*initpts + idx*iterpts
+                for value in values[start:]:
+                    merged_results[key].append(value)
+        if key == 'iterations_to_gmp_convergence':
+            first_convergence_value_found = False
+            initpts = subrun_results[0]['initpts'][0]
+            for subrun in subrun_results:
+                values = subrun[key]
+                for value_idx, value in enumerate(values):
+                    if value_idx < len(merged_results[key]):
+                        continue
+                    if value is None:
+                        break
+                    if value == 0:
+                        continue
+                    else:
+                        merged_results[key].append(
+                            value + first_convergence_value_found * (
+                                subrun['initpts'][0] - initpts))
+                if len(merged_results[key]) > 0:
+                    first_convergence_value_found = True
+            for _ in range(len(merged_results['tolerance_levels']) -
+                           len(merged_results[key])):
+                merged_results[key].append(None)
+        if key == 'totaltime_to_gmp_convergence':
+            time_shift = 0
+            for subrun in subrun_results:
+                values = subrun[key]
+                for value_idx, value in enumerate(values):
+                    if value_idx < len(merged_results[key]):
+                        continue
+                    if value is None:
+                        break
+                    else:
+                        merged_results[key].append(value + time_shift)
+                time_shift += subrun['total_time'][-1]
+            for _ in range(len(merged_results['tolerance_levels']) -
+                           len(merged_results[key])):
+                merged_results[key].append(None)
+        # TODO : The following is not implemented yet (just copied), check
+        # if this measure is used at all, if not, remove it
+        if key == 'observations_to_gmp_convergence':
+            merged_results[key] = subrun_results[0][key]
+        # TODO : total_time, model_time, ...
+
+    json_name = exp_idx
+    json_path = str(subrun_file_paths[0].parent) + '/'
+    #json_path = str(json_path).split('/')[-1].split('_subrun')[0]
+    with open(os.path.expanduser(f'{json_path}{json_name}.json'), 'w') \
+        as output_file:
+            if verbose:
+                print(f'Writing to file {json_path}{json_name}.json ...')
+            json.dump(merged_results, output_file, indent=4)
 
 
 if __name__ == '__main__':
