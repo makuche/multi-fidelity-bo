@@ -1,6 +1,7 @@
 import numpy as np
 import json
 import os
+import shutil
 import preprocess
 from pathlib import Path
 
@@ -105,75 +106,77 @@ def main():
     # merge data from the subruns (only baseline runs)
     for exp in baselines:
         if '_r' in exp:
-            print("Merging experiment ", exp, "...")
             all_subrun_paths = sorted([path for path in
                                    PROCESSED_DATA_DIR.joinpath(exp).iterdir()])
-            print("All experiments listed:", all_subrun_paths)
             for sub_exp in parsed_data_dict[exp]:
                 subrun_paths = [path for path in all_subrun_paths if
                     sub_exp in str(path)]
-                print("Merging subrun ", sub_exp, "with subruns",
-                    subrun_paths, "...")
                 merge_subrun_data(subrun_paths, sub_exp)
+            subrun_dir = PROCESSED_DATA_DIR.joinpath(exp + '/subrun_files')
+            subrun_dir.mkdir()
+            for subrun in all_subrun_paths:
+                if 'subrun' in str(subrun):
+                    shutil.move(os.path.join(subrun_dir.parent, subrun),
+                                             subrun_dir)
 
 
-    # # TODO : Adjust this for the subrun structure, once data is available
-    # # TL experiments
-    # if 'TL_experiments' in CONFIG:
-    #     TL_experiments = CONFIG['TL_experiments']
-    #     for exp in TL_experiments.keys():
-    #         truemin = []
-    #         init_times = []                     # additional times per source
+    # TODO : Adjust this for the subrun structure, once data is available
+    # TL experiments
+    if 'TL_experiments' in CONFIG:
+        TL_experiments = CONFIG['TL_experiments']
+        for exp in TL_experiments.keys():
+            truemin = []
+            init_times = []                     # additional times per source
 
-    #         # Get data from all used baselines for initialization
-    #         for i in range(len(TL_experiments[exp])):
-    #             init_time = []
-    #             baseline_exp = TL_experiments[exp][i][0]
-    #             baseline_init_strategy = TL_experiments[exp][i][1]
-    #             baseline_file = parsed_data_dict[baseline_exp][0]
-    #             data = read_write.load_json(
-    #                 str(PROCESSED_DATA_DIR) +
-    #                 f'/{baseline_exp}/', f'{baseline_file}.json')
-    #             truemin.append(data['truemin'][0])
+            # Get data from all used baselines for initialization
+            for i in range(len(TL_experiments[exp])):
+                init_time = []
+                baseline_exp = TL_experiments[exp][i][0]
+                baseline_init_strategy = TL_experiments[exp][i][1]
+                baseline_file = parsed_data_dict[baseline_exp][0]
+                data = read_write.load_json(
+                    str(PROCESSED_DATA_DIR) +
+                    f'/{baseline_exp}/', f'{baseline_file}.json')
+                truemin.append(data['truemin'][0])
 
-    #             if baseline_init_strategy =='self':
-    #                 init_time = None    # This is 'BO random', not used anymore
-    #             elif baseline_init_strategy == 'random':
-    #                 for baseline_file in parsed_data_dict[baseline_exp]:
-    #                     data = read_write.load_json(
-    #                         str(PROCESSED_DATA_DIR) +
-    #                         f'/{baseline_exp}/', f'{baseline_file}.json')
-    #                     additional_time = data['acq_times'].copy()
-    #                     for i in range(len(data['acq_times'])):
-    #                         additional_time[i] += \
-    #                             sum(np.array(data['acq_times'])[:i])
-    #                     init_time.append(additional_time)
-    #             elif baseline_init_strategy == 'inorder':
-    #                 for baseline_file in parsed_data_dict[baseline_exp]:
-    #                     data = read_write.load_json(
-    #                         str(PROCESSED_DATA_DIR) +
-    #                         f'/{baseline_exp}/', f'{baseline_file}.json')
-    #                     init_time.append(data['total_time'].copy())
-    #             else:
-    #                 raise ValueError("Unknown initialization strategy")
-    #             init_times.append(init_time)
+                if baseline_init_strategy =='self':
+                    init_time = None    # This is 'BO random', not used anymore
+                elif baseline_init_strategy == 'random':
+                    for baseline_file in parsed_data_dict[baseline_exp]:
+                        data = read_write.load_json(
+                            str(PROCESSED_DATA_DIR) +
+                            f'/{baseline_exp}/', f'{baseline_file}.json')
+                        additional_time = data['acq_times'].copy()
+                        for i in range(len(data['acq_times'])):
+                            additional_time[i] += \
+                                sum(np.array(data['acq_times'])[:i])
+                        init_time.append(additional_time)
+                elif baseline_init_strategy == 'inorder':
+                    for baseline_file in parsed_data_dict[baseline_exp]:
+                        data = read_write.load_json(
+                            str(PROCESSED_DATA_DIR) +
+                            f'/{baseline_exp}/', f'{baseline_file}.json')
+                        init_time.append(data['total_time'].copy())
+                else:
+                    raise ValueError("Unknown initialization strategy")
+                init_times.append(init_time)
 
-    #         for i in range(len(parsed_data_dict[exp])):
-    #             initial_data_cost = []
-    #             for init_time in init_times:
-    #                 if init_time is None:
-    #                     initial_data_cost.append(None)
-    #                 else:
-    #                     N_baselines = len(init_time)
-    #                     initial_data_cost.append(init_time[(i % N_baselines)])
-    #             filename = parsed_data_dict[exp][i]
-    #             data = read_write.load_json(str(PROCESSED_DATA_DIR) +
-    #                                         f'/{exp}', f'/{filename}.json')
-    #             data['truemin'] = truemin
-    #             data = preprocess.preprocess(data, tolerances,
-    #                                          initial_data_cost)
-    #             read_write.save_json(data, str(PROCESSED_DATA_DIR) + f'/{exp}',
-    #                                  f'/{filename}.json')
+            for i in range(len(parsed_data_dict[exp])):
+                initial_data_cost = []
+                for init_time in init_times:
+                    if init_time is None:
+                        initial_data_cost.append(None)
+                    else:
+                        N_baselines = len(init_time)
+                        initial_data_cost.append(init_time[(i % N_baselines)])
+                filename = parsed_data_dict[exp][i]
+                data = read_write.load_json(str(PROCESSED_DATA_DIR) +
+                                            f'/{exp}', f'/{filename}.json')
+                data['truemin'] = truemin
+                data = preprocess.preprocess(data, tolerances,
+                                             initial_data_cost)
+                read_write.save_json(data, str(PROCESSED_DATA_DIR) + f'/{exp}',
+                                     f'/{filename}.json')
 
 def rm_tree(pth: Path):
     try:
@@ -452,9 +455,8 @@ def merge_subrun_data(subrun_file_paths, exp_idx):
                 for value in values[start:]:
                     merged_results[key].append(value)
         if key == 'iterations_to_gmp_convergence':
-            first_convergence_value_found = False
             initpts = subrun_results[0]['initpts'][0]
-            for subrun in subrun_results:
+            for subrun_idx, subrun in enumerate(subrun_results):
                 values = subrun[key]
                 for value_idx, value in enumerate(values):
                     if value_idx < len(merged_results[key]):
@@ -464,11 +466,11 @@ def merge_subrun_data(subrun_file_paths, exp_idx):
                     if value == 0:
                         continue
                     else:
-                        merged_results[key].append(
-                            value + first_convergence_value_found * (
-                                subrun['initpts'][0] - initpts))
-                if len(merged_results[key]) > 0:
-                    first_convergence_value_found = True
+                        if subrun_idx == 0:
+                            merged_results[key].append(value)
+                        else:
+                            merged_results[key].append(
+                                value + subrun['initpts'][0] - initpts)
             for _ in range(len(merged_results['tolerance_levels']) -
                            len(merged_results[key])):
                 merged_results[key].append(None)

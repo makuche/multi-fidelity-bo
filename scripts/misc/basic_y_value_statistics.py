@@ -19,7 +19,9 @@ exps = {
     '2HFbasic1': 30,
     '2UHF0basic1': 3,
     '2UHFbasic1': 1,
-#    '4UHF0basic1': 1,
+    '4UHF0basic1': 1,
+    '4UHF0basic1_r': 1,
+    '4UHFbasic1_r': 2
 }
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / 'data'
