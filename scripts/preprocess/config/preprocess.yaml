@@ -24,7 +24,9 @@ TL_experiments:
   2UHFICM1:
     - [2UHFbasic1_r, random]
     - [2LFbasic1, inorder]
+  2UHFICM2:
+    - [2UHFbasic1_r, random]
+    - [2HFbasic1, inorder]
 
 # Tolerances to calculate convergence for
-#tolerances: [5, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001]
-tolerances: [0.1]
+tolerances: [5, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001]

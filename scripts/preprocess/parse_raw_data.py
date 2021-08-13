@@ -106,8 +106,9 @@ def main():
     # merge data from the subruns (only baseline runs)
     for exp in baselines:
         if '_r' in exp:
-            all_subrun_paths = sorted([path for path in
-                                   PROCESSED_DATA_DIR.joinpath(exp).iterdir()])
+            all_subrun_paths = sorted(
+                [path for path in
+                 PROCESSED_DATA_DIR.joinpath(exp).iterdir()])
             for sub_exp in parsed_data_dict[exp]:
                 subrun_paths = [path for path in all_subrun_paths if
                     sub_exp in str(path)]
@@ -117,10 +118,11 @@ def main():
             for subrun in all_subrun_paths:
                 if 'subrun' in str(subrun):
                     shutil.move(os.path.join(subrun_dir.parent, subrun),
-                                             subrun_dir)
-
+                                subrun_dir)
 
     # TODO : Adjust this for the subrun structure, once data is available
+    # from 4UHFICM1_r
+
     # TL experiments
     if 'TL_experiments' in CONFIG:
         TL_experiments = CONFIG['TL_experiments']
@@ -161,15 +163,16 @@ def main():
                     raise ValueError("Unknown initialization strategy")
                 init_times.append(init_time)
 
-            for i in range(len(parsed_data_dict[exp])):
+            for baseline_idx in range(len(parsed_data_dict[exp])):
                 initial_data_cost = []
                 for init_time in init_times:
                     if init_time is None:
                         initial_data_cost.append(None)
                     else:
                         N_baselines = len(init_time)
-                        initial_data_cost.append(init_time[(i % N_baselines)])
-                filename = parsed_data_dict[exp][i]
+                        initial_data_cost.append(init_time[(baseline_idx
+                                                            % N_baselines)])
+                filename = parsed_data_dict[exp][baseline_idx]
                 data = read_write.load_json(str(PROCESSED_DATA_DIR) +
                                             f'/{exp}', f'/{filename}.json')
                 data['truemin'] = truemin
@@ -177,6 +180,7 @@ def main():
                                              initial_data_cost)
                 read_write.save_json(data, str(PROCESSED_DATA_DIR) + f'/{exp}',
                                      f'/{filename}.json')
+
 
 def rm_tree(pth: Path):
     try:
@@ -188,6 +192,7 @@ def rm_tree(pth: Path):
         pth.rmdir()
     except FileNotFoundError:
         return
+
 
 def parse_values(line, typecast=int, sep=None, idx=1):
     """Returns a list of parsed values from a line in the output file.
@@ -489,11 +494,22 @@ def merge_subrun_data(subrun_file_paths, exp_idx):
             for _ in range(len(merged_results['tolerance_levels']) -
                            len(merged_results[key])):
                 merged_results[key].append(None)
-        # TODO : The following is not implemented yet (just copied), check
-        # if this measure is used at all, if not, remove it
+        if key == 'total_time':
+            time_shift = 0
+            for subrun in subrun_results:
+                values = subrun[key]
+                for value_idx, value in enumerate(values):
+                    if value_idx < len(merged_results[key]):
+                        continue
+                    else:
+                        merged_results[key].append(value + time_shift)
+                time_shift += subrun['total_time'][-1]
         if key == 'observations_to_gmp_convergence':
-            merged_results[key] = subrun_results[0][key]
-        # TODO : total_time, model_time, ...
+            # This is not used
+            pass  # TODO
+        if key == 'model_time':
+            # This is not used
+            pass  # TODO
 
     json_name = exp_idx
     json_path = str(subrun_file_paths[0].parent) + '/'

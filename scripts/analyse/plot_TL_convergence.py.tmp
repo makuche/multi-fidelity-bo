@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 from sklearn.linear_model import LinearRegression
-# import pylustrator
-# pylustrator.start()
+import pylustrator
+pylustrator.start()
 
 import read_write
 
@@ -44,6 +44,7 @@ def load_experiments(experiments):
 
 
 def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
+    # TODO : Remove outliers for y axis values by setting them to NaN
     N = len(tl_experiments)
     fig, axs = plt.subplots(2, N, figsize=(5*N, 10), sharey='row')
 
@@ -74,7 +75,7 @@ def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
                                       convergence_time])
 
         for quantity_idx, quantity in enumerate([convergence_iterations,
-                                                 convergence_times]):
+                                       convergence_times]):
             # scatter
             quantity = np.array(quantity, dtype=float)
             axs[quantity_idx, tl_exp_idx].scatter(quantity[:, 0],
@@ -103,12 +104,12 @@ def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
         # axs[1,i].set_title(title, loc='left', fontsize=SMALL_SIZE)
     axs[0, 0].set_xticks([])
     axs[0, 1].set_xticks([])
-    axs[1, 0].set_yticks([0, 50000, 100000, 150000, 200000, 250000, 300000])
+    axs[1, 0].set_yticks([0, 150000, 300000])
     axs[1, 0].set_xticks([0, 25, 50])
-    axs[1, 1].set_xticks([0, 25, 50])
     axs[0, 0].set_ylabel('BO iterations',
                         fontsize=SMALL_SIZE)
     axs[1,0].set_ylabel('CPU time [s]', fontsize=SMALL_SIZE)
+
     for ax in axs[1, :]:
         ax.set_xlabel('secondary initpts', fontsize=SMALL_SIZE)
 
@@ -152,7 +153,7 @@ def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
     plt.figure(1).texts[4].set_weight("bold")
     #% end: automatic generated code from pylustrator
     plt.show()
-    #plt.savefig(FIGS_DIR.joinpath(figname), dpi=300)
+#    plt.savefig(FIGS_DIR.joinpath(figname), dpi=300)
 
 
 main()

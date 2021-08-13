@@ -122,7 +122,7 @@ def plot_acq_times_comparison(exp_list, figname='acquisition_times.pdf',
     plt.rc('font', **font)
 
     acq_times = np.zeros((N, num_points))
-    for idx, exp_path in enumerate(exp_list):
+    for idx, exp_path in enumerate(exp_list[::-1]):
         exp_runs = [exp for exp in exp_path.iterdir()]
         exp_runs.sort()
         for exp_idx, exp_run in enumerate(exp_runs):
@@ -151,13 +151,14 @@ def plot_acq_times_comparison(exp_list, figname='acquisition_times.pdf',
         if i < 2:
             ax.annotate(val, [i-0.3, mean+0.1*mean])
         elif i == 2:
-            ax.annotate(val, [i-0.4, mean+0.1*mean])
+            ax.annotate(val, [i-0.55, mean+0.1*mean])
         else:
             ax.annotate(val, [i-0.55, mean+0.1*mean])
     ax.set_xticks(np.arange(N))
-    ax.set_xticklabels(NAMES[:N])
-    ax.set_xlabel('fidelity')
-    ax.set_ylabel('log. mean acq. time [s]')
+    names = NAMES[::-1]
+    ax.set_xticklabels(names[:N])
+    # ax.set_xlabel('fidelity')
+    ax.set_ylabel('mean acq. time [s]')
     plt.title(r' Acquisition times in format $\bar{t} \pm \sigma$')
     plt.savefig(''.join(('../../results/figs/', figname)))
     plt.close()

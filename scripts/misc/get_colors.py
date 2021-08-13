@@ -4,10 +4,10 @@ import os
 # https://matplotlib.org/stable/tutorials/colors/colormaps.html
 
 try:
-    colormap = sys.argv[1]  #e.g. 'cool'
+    colormap = sys.argv[1]  #e.g. 'viridis'
     N = int(sys.argv[2])
 except:
-    raise Exception(\
+    raise Exception(
         'Usage: python3 get_colors.py <colormap_name> <number_of_colors>. \
             (E.g. python3 get_colors.py viridis 4)')
 
