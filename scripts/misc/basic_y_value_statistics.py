@@ -36,7 +36,7 @@ for exp in exps.keys():
         amp = 0.5*(max_ - min_)
         amps.append(amp)
     mean = round(np.mean(np.array(amps)), 3)
-    beta = 2 / mean**2
+    beta = round(2 / mean**2, 3)
     print("amps:", amps, len(amps))
     print(exp, f"mean of amplitudes over {exps[exp]} subexperiment/s: ",
          mean, "beta: ", beta)

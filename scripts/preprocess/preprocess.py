@@ -86,7 +86,7 @@ def calculate_convergence_times(data, idx, measure='gmp'):
     for tolerance in data['tolerance_levels']:
         i = 0
         for value in values:
-            if value > tolerance:
+            if abs(value) > tolerance:
                 break
             i += 1
         if i == 0:
