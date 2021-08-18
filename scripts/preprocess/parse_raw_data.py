@@ -20,7 +20,6 @@ verbose = False
 
 
 def main():
-
     rm_tree(PROCESSED_DATA_DIR)     # removing existing directory if it exists
     PROCESSED_DATA_DIR.mkdir()
     parsed_data_dict = create_parsed_dict(RAW_DATA_DIR)
@@ -353,14 +352,16 @@ def read_and_preprocess_boss_output(path, file_name, exp_name):
             elif '|| Bayesian optimization completed' in line:
                 results['run_completed'] = True
 
-    # TODO : Check that (also with the new boss)
     results['tasks'] = len(np.unique(np.array(xy)[:, -2]))
     if results['tasks'] not in [1, 2, 3]:
         results['tasks'] = 1
         results['dim'] = len(xy[0])-1
     else:
-        results['dim'] = len(xy[0])-2
-
+        # Hardcoded fix for 2UHFbasic0, where exp_6 has only two xy points:
+        if len(np.array(xy)) == 2:
+            results['dim'] = len(xy[0])-1
+        else:
+            results['dim'] = len(xy[0])-2
     results['xy'] = xy
     results['acq_times'] = acq_times
     # These are the sobol runs that did not finish properly:
@@ -374,9 +375,8 @@ def read_and_preprocess_boss_output(path, file_name, exp_name):
     results['iter_times'] = iter_times
     results['total_time'] = total_time
 
-    # 0 stands for the init points of the secondary task
-    # (TODO : check if thats correct)
-    if len(results['initpts']) == 1:  # add 0 secondary initpts
+    if len(results['initpts']) == 1:
+        # add 0, since no secondary task initpts used
         results['initpts'].append(0)
 
     return results
@@ -513,7 +513,6 @@ def merge_subrun_data(subrun_file_paths, exp_idx):
 
     json_name = exp_idx
     json_path = str(subrun_file_paths[0].parent) + '/'
-    #json_path = str(json_path).split('/')[-1].split('_subrun')[0]
     with open(os.path.expanduser(f'{json_path}{json_name}.json'), 'w') \
         as output_file:
             if verbose:
