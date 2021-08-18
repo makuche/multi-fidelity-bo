@@ -102,9 +102,18 @@ def calculate_convergence_times(data, idx, measure='gmp'):
         data[f'observations_to_{measure}_convergence'].append(observations)
 
 
-
 def calculate_B(data):
-    pass  # TODO : Implement
+    dim = data['dim']
+    if dim == len(data['xy'][0])-1:
+        data['B'] = None
+    else:
+        data['B'] = []
+        tasks = data['tasks']
+        for params in data['GP_hyperparam']:
+            W = np.array(params[dim:-tasks]).reshape((-1, tasks))
+            Kappa = np.diag(params[-tasks:])
+            B = W.dot(W.T) + Kappa
+            data['B'].append([b for b in B.flatten()])
 
 
 def preprocess(data, tolerance_levels=[0], init_data_cost=None):
