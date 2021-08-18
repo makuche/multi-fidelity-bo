@@ -1,6 +1,6 @@
-# Experiment: truemin source
+# Experiment: truemin-source
 baselines:
-  # sobol runs: last index 0, boss runs: last index 1
+  # sobol runs: 0, boss runs: 1
   2LFbasic0: 2LFbasic1
   2LFbasic1: 2LFbasic1
   2HFbasic0: 2HFbasic1
@@ -9,9 +9,13 @@ baselines:
   2UHF0basic1: 2UHF0basic1
   2UHFbasic0: 2UHFbasic1
   2UHFbasic1: 2UHFbasic1
+  2UHFbasic1_r: 2UHFbasic1_r
+  4LFbasic0_sobol: 4LFbasic1
+  4LFbasic1: 4LFbasic1
+  4HFbasic0_sobol: 4HFbasic1
+  4HFbasic1: 4HFbasic1
   4UHF0basic1: 4UHF0basic1
   4UHF0basic1_r: 4UHF0basic1_r
-  2UHFbasic1_r: 2UHFbasic1_r
   4UHFbasic1_r: 4UHFbasic1_r
 
 # TL experiment:
@@ -29,4 +33,5 @@ TL_experiments:
     - [2HFbasic1, inorder]
 
 # Tolerances to calculate convergence for
+# Note: For TL, only 0.1 kcal/mol is used
 tolerances: [5, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001]
