@@ -109,6 +109,8 @@ def plot_gmp_statistics(data, fig, ax):
                 label='0.1 kcal/mol tolerance')
     plt.axhline(-tol, alpha=.3, color='k', linestyle='dashed')
     plt.ylim(-1, 3)
+    plt.ylabel('GMP')
+    plt.xlabel(r'Iteration $n$')
     plt.legend(fontsize=15)
     plt.title(f'GMP over iteration for {len(data)} run/s')
     plt.show()
