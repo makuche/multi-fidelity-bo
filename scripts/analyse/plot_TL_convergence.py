@@ -45,7 +45,7 @@ def load_experiments(experiments):
 
 def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
     N = len(tl_experiments)
-    fig, axs = plt.subplots(2, N, figsize=(5*N, 10), sharey='row')
+    fig, axs = plt.subplots(2, N, figsize=(5*N, 10), sharex=True)
 
     SMALL_SIZE = 15
     MEDIUM_SIZE = 20
@@ -103,7 +103,7 @@ def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
         # axs[1,i].set_title(title, loc='left', fontsize=SMALL_SIZE)
     axs[0, 0].set_xticks([])
     axs[0, 1].set_xticks([])
-    axs[1, 0].set_yticks([0, 50000, 100000, 150000, 200000, 250000, 300000])
+    #axs[1, 0].set_yticks([0, 50000, 100000, 150000, 200000, 250000, 300000])
     axs[1, 0].set_xticks([0, 25, 50])
     axs[1, 1].set_xticks([0, 25, 50])
     axs[0, 0].set_ylabel('BO iterations',
@@ -121,36 +121,6 @@ def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
     fig.suptitle('2UHF - BO iterations and CPU times to GMP convergence',
                  fontsize=MEDIUM_SIZE)
     plt.tight_layout()
-    #% start: automatic generated code from pylustrator
-    plt.figure(1).ax_dict = {ax.get_label(): ax for ax in plt.figure(1).axes}
-    import matplotlib as mpl
-    plt.figure(1).axes[0].legend(frameon=False, fontsize=12, title_fontsize=10.0)
-    plt.figure(1).axes[0].set_position([0.102903, 0.513069, 0.431118, 0.428931])
-    plt.figure(1).axes[0].get_legend()._set_loc((0.033231, 0.041998))
-    plt.figure(1).axes[0].get_legend()._set_loc((0.072663, 0.048992))
-    plt.figure(1).axes[0].get_legend()._set_loc((0.065705, 0.055986))
-    plt.figure(1).axes[1].set_position([0.553882, 0.513069, 0.431118, 0.428931])
-    plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[1].new
-    plt.figure(1).texts[1].set_fontsize(16)
-    plt.figure(1).texts[1].set_position([0.440000, 0.912000])
-    plt.figure(1).texts[1].set_text("(a) LF")
-    plt.figure(1).texts[1].set_weight("bold")
-    plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[2].new
-    plt.figure(1).texts[2].set_fontsize(16)
-    plt.figure(1).texts[2].set_position([0.887000, 0.912000])
-    plt.figure(1).texts[2].set_text("(c) HF")
-    plt.figure(1).texts[2].set_weight("bold")
-    plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[3].new
-    plt.figure(1).texts[3].set_fontsize(16)
-    plt.figure(1).texts[3].set_position([0.440000, 0.458000])
-    plt.figure(1).texts[3].set_text("(b) LF")
-    plt.figure(1).texts[3].set_weight("bold")
-    plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[4].new
-    plt.figure(1).texts[4].set_fontsize(16)
-    plt.figure(1).texts[4].set_position([0.887000, 0.458000])
-    plt.figure(1).texts[4].set_text("(d) HF")
-    plt.figure(1).texts[4].set_weight("bold")
-    #% end: automatic generated code from pylustrator
     plt.show()
     #plt.savefig(FIGS_DIR.joinpath(figname), dpi=300)
 
