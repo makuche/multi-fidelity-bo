@@ -1,3 +1,5 @@
 data/**
 results/**
-./**/**/__pycache__/
+scripts/preprocess/__pycache__/
+scripts/analyse/__pycache__/
+scripts/misc/__pycache__/
