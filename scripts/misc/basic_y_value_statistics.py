@@ -17,10 +17,7 @@ def load_json(path, filename):
 exps = {
     '2LFbasic1': 30,
     '2HFbasic1': 30,
-    '2UHF0basic1': 3,
     '2UHFbasic1': 1,
-    '4UHF0basic1': 1,
-    '4UHF0basic1_r': 1,
     '4UHFbasic1_r': 2
 }
 
