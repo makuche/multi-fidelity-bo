@@ -64,7 +64,17 @@ def plot_amplitude(data, fig, ax):
 
 
 def plot_xy(data, fig, ax):
-    pass
+    fig.set_size_inches(w=8, h=8)
+    for exp_run_idx, exp_run in enumerate(data):
+        print(data[0]['name'])
+        if '4' in data[0]['name']:
+            bound = 150
+        else:
+            bound = 50
+        xy = np.array(data[exp_run_idx]['xy'])[:bound, :-1]
+        plt.scatter(xy[:, 0], xy[:, -1], alpha=.3, s=70, c='k')
+    plt.xlabel(r'$x_1$')
+    plt.ylabel(r'$x_2$')
 
 
 def plot_hyperparameter(data, fig, ax):
@@ -129,13 +139,13 @@ def plot_gmp_statistics(data, fig, ax):
     gmp_var = np.var(gmps, axis=0)
     gmp_median = np.median(gmps, axis=0)
     x_range = np.arange(gmp_mean.shape[0])
-    plt.plot(x_range, gmp_mean, label=r'mean($y$)')
-    plt.plot(x_range, gmp_median, label=r'median($y$)')
-    plt.plot(x_range, gmp_mean + 2*gmp_var, linestyle='--', c='k',
-             label=r'mean($y$) $\pm 2\sigma$')
-    plt.plot(x_range, gmp_mean - 2*gmp_var, linestyle='--', c='k')
+    plt.plot(x_range, gmp_mean, label=r'mean($y$)', c='k')
+    plt.plot(x_range, gmp_median, label=r'median($y$)', c='red')
+    #plt.plot(x_range, gmp_mean + 2*gmp_var, linestyle='--', c='k',
+    #         label=r'mean($y$) $\pm 2\sigma$')
+    #plt.plot(x_range, gmp_mean - 2*gmp_var, linestyle='--', c='k')
     plt.fill_between(x_range, gmp_mean - 2*gmp_var, gmp_mean + 2*gmp_var,
-                     alpha=.1, color='k')
+                     alpha=.1, color='blue')
     plt.axhline(TOLERANCE, alpha=.3, color='k', linestyle='dashed',
                 label='0.1 kcal/mol tolerance')
     plt.axhline(-TOLERANCE, alpha=.3, color='k', linestyle='dashed')
