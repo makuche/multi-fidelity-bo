@@ -8,9 +8,8 @@ from collections import OrderedDict
 # For now, script is only used for the gaussian fidelity experiments
 # TODO : Names have been changed, should be updated if plot is going
 # to be recreated
-EXP_NAMES = ['2UHF0basic0', '2UHFbasic0']
+EXP_NAMES = ['2UHFbasic0']
 EXPS_DATA = {
-    '2UHF0basic0': OrderedDict(),
     '2UHFbasic0': OrderedDict(),
 }
 

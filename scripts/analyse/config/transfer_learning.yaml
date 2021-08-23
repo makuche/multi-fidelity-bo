@@ -1,4 +1,0 @@
-# TL experiments, name of exp: [used baselines (primary, secondary)]
-2HFICM1: [2HFbasic1, 2LFbasic1]
-2UHFICM1: [2UHFbasic1_r, 2LFbasic1]
-2UHFICM2: [2UHFbasic1_r, 2HFbasic1]

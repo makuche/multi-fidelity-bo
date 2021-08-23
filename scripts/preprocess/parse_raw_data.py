@@ -13,8 +13,7 @@ THESIS_DIR = Path(__file__).resolve().parent.parent.parent
 RAW_DATA_DIR = THESIS_DIR / 'data' / 'raw'
 PROCESSED_DATA_DIR = THESIS_DIR / 'data' / 'processed'
 # CONFIG contains experiment names and truemin sources
-CONFIG = read_write.load_yaml(
-    THESIS_DIR.joinpath('scripts/preprocess/config'), '/preprocess.yaml')
+CONFIG = read_write.load_yaml(THESIS_DIR.joinpath('scripts'), '/config.yaml')
 
 verbose = False
 

@@ -10,14 +10,14 @@ import read_write
 
 THESIS_DIR = Path(__name__).resolve().parent.parent.parent
 FIGS_DIR = THESIS_DIR / 'results/figs'
-TL_CONFIG = read_write.load_yaml(THESIS_DIR / 'scripts/analyse/config',
-                              '/transfer_learning.yaml')
+CONFIG = read_write.load_yaml(THESIS_DIR / 'scripts', '/config.yaml')
+CONFIG = CONFIG['TL_experiment_plots']
 tl_experiments = [THESIS_DIR / 'data' / 'processed' /
-                  exp for exp in TL_CONFIG.keys()]
+                  exp for exp in CONFIG.keys()]
+
 # baselines, corresponding to each tl experiment
 baseline_experiments = [THESIS_DIR / 'data' / 'processed' /
-                  TL_CONFIG[exp][0] for exp in TL_CONFIG]
-
+                  CONFIG[exp][0] for exp in CONFIG]
 SCATTER_DICT = {'color': 'blue', 'alpha': .4, 'marker': 'x',
                 'label': 'observation'}
 FIT_DICT = {'color': 'red', 'label': 'trend', 'linewidth': 3,

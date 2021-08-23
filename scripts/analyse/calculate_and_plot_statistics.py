@@ -14,8 +14,11 @@ MEDIUM_SIZE = 20
 LARGE_SIZE = 30
 
 THESIS_DIR = Path(__name__).resolve().parent.parent.parent
+# CONFIG = read_write.load_yaml(
+#     THESIS_DIR.joinpath('scripts/analyse/config'), '/statistics.yaml')
 CONFIG = read_write.load_yaml(
-    THESIS_DIR.joinpath('scripts/analyse/config'), '/statistics.yaml')
+    THESIS_DIR.joinpath('scripts'), '/config.yaml'
+)
 exp_list = [THESIS_DIR / 'data' / 'processed' /
             exp for exp in CONFIG['sobol']]
 NAMES = ['UHF', 'HF', 'LF']

@@ -9,10 +9,8 @@ PROCESSED_DATA_DIR = Path(__file__).resolve().parent.parent.parent.joinpath(
 EXPS = [
     '2LFbasic1',
     '2HFbasic1',
-    '2UHF0basic1',
     '2UHFbasic1',
-    '4UHF0basic1',
-    '4UHF0basic1_r']
+    '4UHFbasic1_r']
 
 
 def main():
