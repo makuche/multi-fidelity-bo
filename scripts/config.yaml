@@ -31,6 +31,15 @@ TL_experiments:
   2HFICM1:
     - [2HFbasic1, random]
     - [2LFbasic1, inorder]
+  # 4UHFICM1_r:
+  #   - [4UHFbasic1_r, random]
+  #   - [4LFbasic1, inorder]
+  # 4UHFICM2_r:
+  #   - [4UHFbasic1_r, random]
+  #   - [4HFbasic1, inorder]
+  4HFICM1:
+    - [4HFbasic1, random]
+    - [4LFbasic1, inorder]
 
 # Tolerances levels for convergence. For TL, only 0.1 kcal/mol is used
 tolerances: [5, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001]
@@ -47,3 +56,4 @@ TL_experiment_plots:
   2HFICM1: [2HFbasic1, 2LFbasic1]
   2UHFICM1: [2UHFbasic1_r, 2LFbasic1]
   2UHFICM2: [2UHFbasic1_r, 2HFbasic1]
+  # 4HFICM1: [4HFbasic1, 4LFbasic1]

@@ -3,9 +3,12 @@ import json
 import os
 import shutil
 import preprocess
+import sys
 from pathlib import Path
+# Add path to use read_write.py
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import read_write
+from read_write import load_yaml, load_json, save_json
 
 
 # folder locations for raw and processed data
@@ -13,7 +16,7 @@ THESIS_DIR = Path(__file__).resolve().parent.parent.parent
 RAW_DATA_DIR = THESIS_DIR / 'data' / 'raw'
 PROCESSED_DATA_DIR = THESIS_DIR / 'data' / 'processed'
 # CONFIG contains experiment names and truemin sources
-CONFIG = read_write.load_yaml(THESIS_DIR.joinpath('scripts'), '/config.yaml')
+CONFIG = load_yaml(THESIS_DIR.joinpath('scripts'), '/config.yaml')
 
 verbose = False
 
@@ -29,24 +32,25 @@ def main():
         exp_batch = [x for x in exp_path.iterdir() if
                      x.is_dir() and 'exp' in str(x)]
         exp_batch.sort()
-        for idx, single_run in enumerate(exp_batch):
-            subruns = [x for x in single_run.iterdir() if
+        for exp_run_idx, exp_run in enumerate(exp_batch):
+            subruns = [x for x in exp_run.iterdir() if
                        x.is_dir() and 'subrun' in str(x)]
             if len(subruns) == 0:
-                file_path = str(single_run.joinpath('boss.out'))
-                str_ = f'exp_{idx+1}.json'
+                file_path = str(exp_run.joinpath('boss.out'))
+                json_name = f'exp_{exp_run_idx+1}.json'
                 PROCESSED_DATA_DIR.joinpath(exp).mkdir(parents=True,
                                                        exist_ok=True)
-                json_path = str(PROCESSED_DATA_DIR.joinpath(exp, str_))
+                json_path = str(PROCESSED_DATA_DIR.joinpath(exp, json_name))
                 parse(file_path, exp, json_path)
             else:
                 for subrun in subruns:
                     file_path = str(subrun.joinpath('boss.out'))
                     subrun_str = str(subrun).split('/')[-1]
-                    str_ = f'exp_{idx+1}_{subrun_str}.json'
+                    json_name = f'exp_{exp_run_idx+1}_{subrun_str}.json'
                     PROCESSED_DATA_DIR.joinpath(exp).mkdir(parents=True,
-                                                       exist_ok=True)
-                    json_path = str(PROCESSED_DATA_DIR.joinpath(exp, str_))
+                                                           exist_ok=True)
+                    json_path = str(PROCESSED_DATA_DIR.joinpath(exp,
+                                                                json_name))
                     parse(file_path, exp, json_path)
 
     # Once all the raw data is processed, substract the truemin
@@ -65,7 +69,7 @@ def main():
         truemin_precalculated = False
         truemin = None
         for sub_exp_path in sub_exp_paths:
-            results = read_write.load_json('', sub_exp_path)
+            results = load_json('', sub_exp_path)
             if 'truemin' in results:
                 truemin_precalculated = True
                 break
@@ -75,18 +79,17 @@ def main():
             best_acqs = np.array(best_acqs)
             truemin = [best_acqs[np.argmin(best_acqs[:, -1]), :].tolist()]
             for sub_exp_path in sub_exp_paths:
-                results = read_write.load_json('', sub_exp_path)
+                results = load_json('', sub_exp_path)
                 results['truemin'] = truemin
                 results = preprocess.preprocess(results, tolerances)
-                read_write.save_json(results, sub_exp_path, '')
+                save_json(results, sub_exp_path, '')
 
-    # Secondly, loop over the other baseline experiments and 'attach'
-    # the truemins from the truemin sources
+    # Secondly, loop over the other baseline experiments and add truemins
     for exp in baselines:
         sub_exp_paths = [
             x for x in PROCESSED_DATA_DIR.joinpath(exp).iterdir()]
         for sub_exp_path in sub_exp_paths:
-            results = read_write.load_json('', sub_exp_path)
+            results = load_json('', sub_exp_path)
             if 'truemin' in results:
                 # Truemin already calculated, go to next experiment
                 break
@@ -96,11 +99,12 @@ def main():
                     PROCESSED_DATA_DIR.joinpath(baselines[exp]).iterdir()]
                 # Only need the truemin from one truemin source
                 # experiment, therefore access source_path[0]
-                source = read_write.load_json('', source_path[0])
+                source = load_json('', source_path[0])
                 results['truemin'] = source['truemin']
                 results = preprocess.preprocess(results, tolerances)
-                read_write.save_json(results, sub_exp_path, '')
+                save_json(results, sub_exp_path, '')
 
+    # TODO : Merge also the TL data
     # merge data from the subruns (only baseline runs)
     for exp in baselines:
         if '_r' in exp:
@@ -120,7 +124,6 @@ def main():
 
     # TODO : Adjust this for the subrun structure, once data is available
     # from 4UHFICM1_r
-
     # TL experiments
     if 'TL_experiments' in CONFIG:
         TL_experiments = CONFIG['TL_experiments']
@@ -134,7 +137,7 @@ def main():
                 baseline_exp = TL_experiments[exp][i][0]
                 baseline_init_strategy = TL_experiments[exp][i][1]
                 baseline_file = parsed_data_dict[baseline_exp][0]
-                data = read_write.load_json(
+                data = load_json(
                     str(PROCESSED_DATA_DIR) +
                     f'/{baseline_exp}/', f'{baseline_file}.json')
                 truemin.append(data['truemin'][0])
@@ -143,7 +146,7 @@ def main():
                     init_time = None    # This is 'BO random', not used anymore
                 elif baseline_init_strategy == 'random':
                     for baseline_file in parsed_data_dict[baseline_exp]:
-                        data = read_write.load_json(
+                        data = load_json(
                             str(PROCESSED_DATA_DIR) +
                             f'/{baseline_exp}/', f'{baseline_file}.json')
                         additional_time = data['acq_times'].copy()
@@ -153,7 +156,7 @@ def main():
                         init_time.append(additional_time)
                 elif baseline_init_strategy == 'inorder':
                     for baseline_file in parsed_data_dict[baseline_exp]:
-                        data = read_write.load_json(
+                        data = load_json(
                             str(PROCESSED_DATA_DIR) +
                             f'/{baseline_exp}/', f'{baseline_file}.json')
                         init_time.append(data['total_time'].copy())
@@ -171,12 +174,12 @@ def main():
                         initial_data_cost.append(init_time[(baseline_idx
                                                             % N_baselines)])
                 filename = parsed_data_dict[exp][baseline_idx]
-                data = read_write.load_json(str(PROCESSED_DATA_DIR) +
+                data = load_json(str(PROCESSED_DATA_DIR) +
                                             f'/{exp}', f'/{filename}.json')
                 data['truemin'] = truemin
                 data = preprocess.preprocess(data, tolerances,
                                              initial_data_cost)
-                read_write.save_json(data, str(PROCESSED_DATA_DIR) + f'/{exp}',
+                save_json(data, str(PROCESSED_DATA_DIR) + f'/{exp}',
                                      f'/{filename}.json')
 
 
@@ -232,7 +235,7 @@ def create_parsed_dict(data_folder):
             exp_runs = sorted(exp_runs, key=lambda run:
                               int(run.split(sep='_')[-1]))
             data_dict[exp_name] = exp_runs
-    read_write.save_json(data_dict, PROCESSED_DATA_DIR, '/parsed_dict.json')
+    save_json(data_dict, PROCESSED_DATA_DIR, '/parsed_dict.json')
     return data_dict
 
 
@@ -421,7 +424,7 @@ def merge_subrun_data(subrun_file_paths, exp_idx):
 
     # First part: Just copying (or stacking) the data
     for subrun_path in subrun_file_paths:
-        subrun_results.append(read_write.load_json(subrun_path, ''))
+        subrun_results.append(load_json(subrun_path, ''))
 
     for key in to_copy_from_first_subrun:
         merged_results[key] = subrun_results[0][key]

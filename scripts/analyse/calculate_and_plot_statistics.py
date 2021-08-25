@@ -2,8 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 from pathlib import Path
+# Add path to use read_write.py
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import read_write
+from read_write import load_yaml, load_json, save_json
 
 
 verbose = False
@@ -14,9 +16,7 @@ MEDIUM_SIZE = 20
 LARGE_SIZE = 30
 
 THESIS_DIR = Path(__name__).resolve().parent.parent.parent
-# CONFIG = read_write.load_yaml(
-#     THESIS_DIR.joinpath('scripts/analyse/config'), '/statistics.yaml')
-CONFIG = read_write.load_yaml(
+CONFIG = load_yaml(
     THESIS_DIR.joinpath('scripts'), '/config.yaml'
 )
 exp_list = [THESIS_DIR / 'data' / 'processed' /
@@ -57,7 +57,7 @@ def plot_y_scatter_trellis(exp_list, figname='trellis_correlation.pdf',
         exp_runs.sort()
         # TODO : Remove hardcoded part
         for exp_idx, exp_run in enumerate(exp_runs):
-            data = read_write.load_json(exp_run, '')
+            data = load_json(exp_run, '')
             if len(exp_runs) > 1:
                 # idxs sets the correct indexes to fill in y_values array
                 if 'exp_5' in str(exp_run):
@@ -129,7 +129,7 @@ def plot_acq_times_comparison(exp_list, figname='acquisition_times.pdf',
         exp_runs = [exp for exp in exp_path.iterdir()]
         exp_runs.sort()
         for exp_idx, exp_run in enumerate(exp_runs):
-            data = read_write.load_json(exp_run, '')
+            data = load_json(exp_run, '')
             # # (Prepare - hardcoded mess coming up!)
             if len(exp_runs) > 1:
                 # idxs sets the correct indexes to fill in y_values array

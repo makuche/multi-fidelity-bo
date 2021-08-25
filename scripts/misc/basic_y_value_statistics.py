@@ -1,7 +1,11 @@
 import numpy as np
 import json
+import sys
 from pathlib import Path
+# Add path to use read_write.py
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# TODO: Fix, now that read_write is accessed from parent dir
 def load_json(path, filename):
     """
     load json file

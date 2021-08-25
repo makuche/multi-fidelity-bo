@@ -5,12 +5,17 @@ from sklearn.linear_model import LinearRegression
 # import pylustrator
 # pylustrator.start()
 
-import read_write
+import sys
+from pathlib import Path
+# Add path to use read_write.py
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from read_write import load_yaml, load_json, save_json
 
 
 THESIS_DIR = Path(__name__).resolve().parent.parent.parent
 FIGS_DIR = THESIS_DIR / 'results/figs'
-CONFIG = read_write.load_yaml(THESIS_DIR / 'scripts', '/config.yaml')
+CONFIG = load_yaml(THESIS_DIR / 'scripts', '/config.yaml')
 CONFIG = CONFIG['TL_experiment_plots']
 tl_experiments = [THESIS_DIR / 'data' / 'processed' /
                   exp for exp in CONFIG.keys()]
@@ -38,7 +43,7 @@ def load_experiments(experiments):
         exp_data = []
         for exp in experiment.iterdir():
             if exp.is_file():
-                exp_data.append(read_write.load_json('', exp))
+                exp_data.append(load_json('', exp))
         experiments_data.append(exp_data)
     return experiments_data
 
