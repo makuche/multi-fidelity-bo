@@ -512,21 +512,47 @@ def merge_subrun_data(subrun_file_paths, exp_idx):
                         merged_results[key][value_idx] = subrun_initpts + \
                             value - initial_initpts
             merged_results[key] = merged_results[key].tolist()
+        # BUG : This doesn't work for runs which convergence in a subrun
+        # but don't converge in a following subrun
+        # if key == 'totaltime_to_gmp_convergence':
+        #     time_shift = 0
+        #     for subrun in subrun_results:
+        #         values = subrun[key]
+        #         for value_idx, value in enumerate(values):
+        #             if value_idx < len(merged_results[key]):
+        #                 continue
+        #             if value is None:
+        #                 break
+        #             else:
+        #                 merged_results[key].append(value + time_shift)
+        #         time_shift += subrun['total_time'][-1]
+        #     for _ in range(len(merged_results['tolerance_levels']) -
+        #                    len(merged_results[key])):
+        #         merged_results[key].append(None)
         if key == 'totaltime_to_gmp_convergence':
-            time_shift = 0
-            for subrun in subrun_results:
+            time_shift, lowest_tolerance_idx = 0, None
+            for subrun_idx, subrun in enumerate(subrun_results):
                 values = subrun[key]
+                if subrun_idx == 0:
+                    merged_results[key] = np.array(values)
+                    for value_idx, value in enumerate(values):
+                        if value is not None:
+                            lowest_tolerance_idx = value_idx
+                    time_shift += subrun['total_time'][-1]
+                    continue
                 for value_idx, value in enumerate(values):
-                    if value_idx < len(merged_results[key]):
-                        continue
                     if value is None:
+                        merged_results[key][value_idx:] = None
+                        time_shift += subrun['total_time'][-1]
+                        lowest_tolerance_idx = value_idx - 1
                         break
-                    else:
-                        merged_results[key].append(value + time_shift)
-                time_shift += subrun['total_time'][-1]
-            for _ in range(len(merged_results['tolerance_levels']) -
-                           len(merged_results[key])):
-                merged_results[key].append(None)
+                    elif subrun['iterations_to_gmp_convergence'][value_idx] != 0 and not None and value_idx <= lowest_tolerance_idx:
+                        merged_results[key][value_idx] = value + time_shift
+                        lowest_tolerance_idx = value_idx
+                    elif value_idx > lowest_tolerance_idx:
+                        merged_results[key][value_idx] = value + time_shift
+            merged_results[key] = merged_results[key].tolist()
+        # BUG : Same as above
         if key == 'total_time':
             time_shift = 0
             for subrun in subrun_results:
