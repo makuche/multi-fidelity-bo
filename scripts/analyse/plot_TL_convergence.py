@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -13,10 +14,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from read_write import load_yaml, load_json, save_json
 
 
-THESIS_DIR = Path(__name__).resolve().parent.parent.parent
+THESIS_DIR = Path(__file__).resolve().parent.parent.parent
 FIGS_DIR = THESIS_DIR / 'results/figs'
 CONFIG = load_yaml(THESIS_DIR / 'scripts', '/config.yaml')
-CONFIG = CONFIG['TL_experiment_plots']
+if len(sys.argv) == 2:
+    CONFIG = CONFIG[f'TL_experiment_plots_{sys.argv[1]}']
+    figname = sys.argv[1] + '_TL.pdf'
+else:
+    raise Exception("Usage: python3 plot_TL_convergence.py 2D (or 4D)")
+
 tl_experiments = [THESIS_DIR / 'data' / 'processed' /
                   exp for exp in CONFIG.keys()]
 
@@ -28,12 +34,15 @@ SCATTER_DICT = {'color': 'blue', 'alpha': .4, 'marker': 'x',
 FIT_DICT = {'color': 'red', 'label': 'trend', 'linewidth': 3,
             'linestyle': 'dashed', 'alpha': .5}
 MEANS_DICT = {'color': 'red', 'marker': '*', 's': 100}
-
+TITLE_DICT = {0: 'LF ➞ HF', 1: 'LF ➞ UHF', 2: 'HF ➞ UHF'}
+SMALL_SIZE = 12
+MEDIUM_SIZE = 20
+LARGE_SIZE = 25
 
 def main():
     tl_experiment_data = load_experiments(tl_experiments)
     baseline_experiment_data = load_experiments(baseline_experiments)
-    plot_tl_convergence('2DUHF.pdf',
+    plot_tl_convergence(figname,
                         baseline_experiment_data, tl_experiment_data)
 
 
@@ -50,17 +59,17 @@ def load_experiments(experiments):
 
 def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
     N = len(tl_experiments)
-    fig, axs = plt.subplots(2, N, figsize=(5*N, 10), sharex=True)
+    fig, axs = plt.subplots(2, N, figsize=(3*N, 6), sharex=True)
+    mean_values = np.zeros((2, *axs.shape))
 
-    SMALL_SIZE = 15
-    MEDIUM_SIZE = 20
-    LARGE_SIZE = 25
+
 
     for tl_exp_idx in range(N):
         baseline_data = baseline_experiments[tl_exp_idx]
         tl_data = tl_experiments[tl_exp_idx]
 
         explist = baseline_data
+        name = explist[0]['name']
         for tl_exp in tl_data:
             explist.append(tl_exp)
 
@@ -82,52 +91,69 @@ def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
                                                  convergence_times]):
             # scatter
             quantity = np.array(quantity, dtype=float)
+            if quantity_idx == 1:
+                quantity[:, 1] /= 3600
             axs[quantity_idx, tl_exp_idx].scatter(quantity[:, 0],
                                                   quantity[:, 1],
                                                   **SCATTER_DICT)
             # fit
+            # TODO : Uncomment once all runs have converged, this raises
+            # error because LinearRegression doesn't work with NaN values
             x = quantity[:, 0].reshape(-1, 1)
             y = quantity[:, 1].reshape(-1, 1)
-            reg = LinearRegression().fit(x, y)
-            x_plot = np.arange(0, 50, 0.01).reshape(-1, 1)
-            y_plot = reg.predict(x_plot)
-            axs[quantity_idx, tl_exp_idx].plot(x_plot, y_plot, **FIT_DICT)
+            # reg = LinearRegression().fit(x, y)
+            # x_plot = np.arange(0, 50, 0.01).reshape(-1, 1)
+            # y_plot = reg.predict(x_plot)
+            # axs[quantity_idx, tl_exp_idx].plot(x_plot, y_plot, **FIT_DICT)
             # means
             for initpts_idx, initpts in enumerate(np.unique(x)):
-                mean = np.mean(y[x == initpts])
+                # Can be removed once all runs have converged
+                if '4' in name:
+                    y_without_nan = [x for x in y[x == initpts] if
+                        str(x) != 'nan']
+                    mean = np.mean(y_without_nan)
+                else:
+                    mean = np.mean(y[x == initpts])
+                mean_values[initpts_idx, quantity_idx, tl_exp_idx] = mean
                 if initpts_idx == 0:
                     axs[quantity_idx, tl_exp_idx].scatter(
                         [initpts], [mean], **MEANS_DICT, label='mean')
                 else:
                     axs[quantity_idx, tl_exp_idx].scatter(
                         [initpts], [mean], **MEANS_DICT)
+            # Raises warning but can be ignored, this is just used for titles
+            reduction_values = mean_values[1, :, :] / mean_values[0, :, :]
+            reduction = reduction_values[quantity_idx, tl_exp_idx]
+            if quantity_idx == 0:
+                axs[quantity_idx, tl_exp_idx].set_title(
+                    f'{TITLE_DICT[tl_exp_idx]}\n' +
+                    f'TL: {round(100*reduction, 1)} % baseline resources',
+                    fontsize=10)
+            else:
+                axs[quantity_idx, tl_exp_idx].set_title(
+                    f'TL: {round(100*reduction, 1)} % baseline resources',
+                    fontsize=10)
+
             axs[0, 0].legend(fontsize=SMALL_SIZE)
-        #title = f'{i+1}a) {expname}'
-        #axs[0,i].set_title(title, loc='left', fontsize=SMALL_SIZE)
-        # title = f'{i+1}b) {expname}'
-        # axs[1,i].set_title(title, loc='left', fontsize=SMALL_SIZE)
     axs[0, 0].set_xticks([])
     axs[0, 1].set_xticks([])
-    #axs[1, 0].set_yticks([0, 50000, 100000, 150000, 200000, 250000, 300000])
-    axs[1, 0].set_xticks([0, 25, 50])
-    axs[1, 1].set_xticks([0, 25, 50])
+    if '4' in name:
+        axs[1, 0].set_xticks([0, 100, 200])
+        axs[1, 1].set_xticks([0, 100, 200])
+    else:
+        axs[1, 0].set_xticks([0, 25, 50])
+        axs[1, 1].set_xticks([0, 25, 50])
     axs[0, 0].set_ylabel('BO iterations',
                         fontsize=SMALL_SIZE)
-    axs[1,0].set_ylabel('CPU time [s]', fontsize=SMALL_SIZE)
+    axs[1,0].set_ylabel('CPU time [h]', fontsize=SMALL_SIZE)
     for ax in axs[1, :]:
-        ax.set_xlabel('secondary initpts', fontsize=SMALL_SIZE)
+        ax.set_xlabel('secondary initpoints', fontsize=SMALL_SIZE)
 
-    # for ax in axs.flatten():
-    #     # ax.spines['bottom'].set_visible(False)
-    #     # ax.spines['left'].set_visible(False)
-    #     ax.spines['right'].set_visible(False)
-    #     ax.spines['top'].set_visible(False)
-
-    fig.suptitle('2UHF - BO iterations and CPU times to GMP convergence',
+    fig.suptitle(f'{name[:1]}D TL experiments',
                  fontsize=MEDIUM_SIZE)
     plt.tight_layout()
-    plt.show()
-    #plt.savefig(FIGS_DIR.joinpath(figname), dpi=300)
+    #plt.show()
+    plt.savefig(FIGS_DIR.joinpath(figname), dpi=300)
 
 
 main()

@@ -31,12 +31,12 @@ TL_experiments:
   2HFICM1:
     - [2HFbasic1, random]
     - [2LFbasic1, inorder]
-  # 4UHFICM1_r:
-  #   - [4UHFbasic1_r, random]
-  #   - [4LFbasic1, inorder]
-  # 4UHFICM2_r:
-  #   - [4UHFbasic1_r, random]
-  #   - [4HFbasic1, inorder]
+  4UHFICM1_r:
+    - [4UHFbasic1_r, random]
+    - [4LFbasic1, inorder]
+  4UHFICM2_r:
+    - [4UHFbasic1_r, random]
+    - [4HFbasic1, inorder]
   4HFICM1:
     - [4HFbasic1, random]
     - [4LFbasic1, inorder]
@@ -52,8 +52,11 @@ sobol:
 
 # TL experiment_plots:
 #   experiment: [primary task, secondary task]
-TL_experiment_plots:
+TL_experiment_plots_2D:
   2HFICM1: [2HFbasic1, 2LFbasic1]
   2UHFICM1: [2UHFbasic1_r, 2LFbasic1]
   2UHFICM2: [2UHFbasic1_r, 2HFbasic1]
-  # 4HFICM1: [4HFbasic1, 4LFbasic1]
+TL_experiment_plots_4D:
+  4HFICM1: [4HFbasic1, 4LFbasic1]
+  4UHFICM1_r: [4UHFbasic1_r, 4LFbasic1]
+  4UHFICM2_r: [4UHFbasic1_r, 4HFbasic1]
