@@ -17,7 +17,8 @@ from read_write import load_yaml, load_json, save_json
 THESIS_DIR = Path(__file__).resolve().parent.parent.parent
 FIGS_DIR = THESIS_DIR / 'results/figs'
 CONFIG = load_yaml(THESIS_DIR / 'scripts', '/config.yaml')
-if len(sys.argv) == 2:
+TOL_IDX = 5         # 5 : 0.1 kcal/mol, 3 : 0.5 kcal/mol
+if len(sys.argv) > 1:
     CONFIG = CONFIG[f'TL_experiment_plots_{sys.argv[1]}']
     figname = sys.argv[1] + '_TL.pdf'
 else:
@@ -25,6 +26,7 @@ else:
 
 tl_experiments = [THESIS_DIR / 'data' / 'processed' /
                   exp for exp in CONFIG.keys()]
+print(tl_experiments)
 
 # baselines, corresponding to each tl experiment
 baseline_experiments = [THESIS_DIR / 'data' / 'processed' /
@@ -38,6 +40,7 @@ TITLE_DICT = {0: 'LF ➞ HF', 1: 'LF ➞ UHF', 2: 'HF ➞ UHF'}
 SMALL_SIZE = 12
 MEDIUM_SIZE = 20
 LARGE_SIZE = 25
+
 
 def main():
     tl_experiment_data = load_experiments(tl_experiments)
@@ -58,8 +61,10 @@ def load_experiments(experiments):
 
 
 def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
+
     N = len(tl_experiments)
-    fig, axs = plt.subplots(2, N, figsize=(3*N, 6), sharex=True)
+    print(N)
+    fig, axs = plt.subplots(2, N, figsize=(3*N, 6))
     mean_values = np.zeros((2, *axs.shape))
 
 
@@ -79,11 +84,11 @@ def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
                 secondary_initpts = int(exp['initpts'][1])
             else:
                 secondary_initpts = 0
-            convergence_iter = exp['iterations_to_gmp_convergence'][5]
+            convergence_iter = exp['iterations_to_gmp_convergence'][TOL_IDX]
             convergence_iterations.append([secondary_initpts,
                                            convergence_iter])
 
-            convergence_time = exp['totaltime_to_gmp_convergence'][5]
+            convergence_time = exp['totaltime_to_gmp_convergence'][TOL_IDX]
             convergence_times.append([secondary_initpts,
                                       convergence_time])
 
@@ -118,6 +123,7 @@ def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
                 if initpts_idx == 0:
                     axs[quantity_idx, tl_exp_idx].scatter(
                         [initpts], [mean], **MEANS_DICT, label='mean')
+                    axs[quantity_idx, tl_exp_idx].text(10, mean, f'{int(mean)}', c='r')
                 else:
                     axs[quantity_idx, tl_exp_idx].scatter(
                         [initpts], [mean], **MEANS_DICT)
@@ -126,7 +132,7 @@ def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
             reduction = reduction_values[quantity_idx, tl_exp_idx]
             if quantity_idx == 0:
                 axs[quantity_idx, tl_exp_idx].set_title(
-                    f'{TITLE_DICT[tl_exp_idx]}\n' +
+                    f'{TITLE_DICT[tl_exp_idx % 3]}\n' +
                     f'TL: {round(100*reduction, 1)} % baseline resources',
                     fontsize=10)
             else:
@@ -135,14 +141,14 @@ def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
                     fontsize=10)
 
             axs[0, 0].legend(fontsize=SMALL_SIZE)
-    axs[0, 0].set_xticks([])
-    axs[0, 1].set_xticks([])
-    if '4' in name:
-        axs[1, 0].set_xticks([0, 100, 200])
-        axs[1, 1].set_xticks([0, 100, 200])
-    else:
-        axs[1, 0].set_xticks([0, 25, 50])
-        axs[1, 1].set_xticks([0, 25, 50])
+    # axs[0, 0].set_xticks([])
+    # axs[0, 1].set_xticks([])
+    # if '4' in name:
+    #     axs[1, 0].set_xticks([0, 100, 200])
+    #     axs[1, 1].set_xticks([0, 100, 200])
+    # else:
+    #     axs[1, 0].set_xticks([0, 25, 50])
+    #     axs[1, 1].set_xticks([0, 25, 50])
     axs[0, 0].set_ylabel('BO iterations',
                         fontsize=SMALL_SIZE)
     axs[1,0].set_ylabel('CPU time [h]', fontsize=SMALL_SIZE)
@@ -152,8 +158,10 @@ def plot_tl_convergence(figname, baseline_experiments, tl_experiments):
     fig.suptitle(f'{name[:1]}D TL experiments',
                  fontsize=MEDIUM_SIZE)
     plt.tight_layout()
-    #plt.show()
-    plt.savefig(FIGS_DIR.joinpath(figname), dpi=300)
+    if '--display' in sys.argv[1:]:
+        plt.show()
+    else:
+        plt.savefig(FIGS_DIR.joinpath(figname), dpi=300)
 
 
 main()
