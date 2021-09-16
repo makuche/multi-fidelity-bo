@@ -1,5 +1,5 @@
 # This file contains configuration for parsing, preprocessing and analyzing
-# the raw data obtained from baseline and transfer learning exeperiments.
+# the raw data obtained from baseline and transfer learning experiments.
 
 # baselines:
 #   experiment: truemin-source (index 0: sobol runs, 1: boss runs)
@@ -12,8 +12,10 @@ baselines:
   2UHFbasic1: 2UHFbasic1
   2UHFbasic1_r: 2UHFbasic1_r
   4LFbasic0_sobol: 4LFbasic1
+  4LFbasic0: 4LFbasic1
   4LFbasic1: 4LFbasic1
   4HFbasic0_sobol: 4HFbasic1
+  4HFbasic0: 4HFbasic1
   4HFbasic1: 4HFbasic1
   4UHFbasic1_r: 4UHFbasic1_r
 
@@ -31,24 +33,35 @@ TL_experiments:
   2HFICM1:
     - [2HFbasic1, random]
     - [2LFbasic1, inorder]
+  4HFICM1:
+    - [4HFbasic1, random]
+    - [4LFbasic1, inorder]
   4UHFICM1_r:
+    - [4UHFbasic1_r, random]
+    - [4LFbasic1, inorder]
+  4UHFICM3_r:
     - [4UHFbasic1_r, random]
     - [4LFbasic1, inorder]
   4UHFICM2_r:
     - [4UHFbasic1_r, random]
     - [4HFbasic1, inorder]
-  4HFICM1:
-    - [4HFbasic1, random]
-    - [4LFbasic1, inorder]
+  4UHFICM4_r:
+    - [4UHFbasic1_r, random]
+    - [4HFbasic1, inorder]
 
-# Tolerances levels for convergence. For TL, only 0.1 kcal/mol is used
+# Tolerances levels for convergence in units of kcal/mol.
 tolerances: [5, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001]
 
-# List of sobol runs
-sobol:
-  - '2UHFbasic0'
-  - '2HFbasic0'
-  - '2LFbasic0'
+# List of runs which are used to calculate correlation statistics
+correlation_data:
+  2D:
+    - '2LFbasic0'
+    - '2HFbasic0'
+    - '2UHFbasic0'
+  4D:
+    - '4LFbasic0'
+    - '4HFbasic0'
+    - '4UHFbasic1_r'
 
 # TL experiment_plots:
 #   experiment: [primary task, secondary task]
@@ -60,3 +73,6 @@ TL_experiment_plots_4D:
   4HFICM1: [4HFbasic1, 4LFbasic1]
   4UHFICM1_r: [4UHFbasic1_r, 4LFbasic1]
   4UHFICM2_r: [4UHFbasic1_r, 4HFbasic1]
+  4UHFICM3_r: [4UHFbasic1_r, 4LFbasic1]
+  4UHFICM4_r: [4UHFbasic1_r, 4HFbasic1]
+

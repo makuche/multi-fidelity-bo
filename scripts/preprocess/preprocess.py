@@ -16,21 +16,21 @@ def substract_y_offset(data):
     Args:
         data (dict): Parsed data from boss.out
     """
-
-    y_offset = np.array(data['truemin'])[:,-1]
-
+    y_offset = np.array(data['truemin'])[:, -1]
     for value in data['gmp']:
         value[-2] -= y_offset[0]
     for value in data['best_acq']:
         value[-1] -= y_offset[0]
 
-    for i in range(len(y_offset)):
+    N_sources = len(y_offset)
+    if N_sources == 1:                          # Baseline runs
         for value in data['xy']:
-            if i == 0:
-                value[-1] -= y_offset[i]
-            # TODO : check if > 1 or > 0 here...
-            elif len(y_offset)  > 1 and value[-2] == i:
-                value[-1] -= y_offset[i]
+            value[-1] -= y_offset[0]
+    elif N_sources > 1:                         # TL runs
+        for value in data['xy']:
+            for i in range(N_sources):
+                if value[-2] == i:
+                    value[-1] -= y_offset[i]
 
 
 def add_init_acq_times(data, init_data_cost):

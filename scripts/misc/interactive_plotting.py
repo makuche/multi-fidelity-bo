@@ -7,10 +7,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from read_write import load_yaml, load_json, save_json
 
-PROCESSED_DIR = Path(__file__).resolve().parent.parent.parent/'data/processed'
+THESIS_DIR = Path(__file__).resolve().parent.parent.parent
+PROCESSED_DIR = THESIS_DIR / 'data/processed'
+SCRIPTS_DIR = THESIS_DIR / 'scripts'
 
-TOLERANCE = 0.1  # kcal/mol
-TOLERANCE_IDX = 5
+tolerances = np.array(load_yaml(SCRIPTS_DIR, '/config.yaml')['tolerances'])
+TOLERANCE = tolerances[5]  # kcal/mol
+TOLERANCE_IDX = np.argwhere(tolerances == TOLERANCE).squeeze()
 DIM_2D = (0, 1)
 DIM_4D = (0, 3)
 AXIS_FONTSIZE = 15
@@ -35,16 +38,21 @@ def main():
         experiment_runs = [exp for exp in
                            experiment_path.iterdir() if exp.is_file()]
         data = [load_json(run, '') for run in experiment_runs]
+        for (exp_run, exp_data) in zip(experiment_runs, data):
+            name = str(exp_run).split('/')[-1].split('.json')[0]
+            exp_data['exp_run'] = name
         data.sort(key=sort_data_by_convergence)
         plot_functions = [
             plot_amplitude, plot_xy, plot_hyperparameter, plot_best_acq,
-            plot_gmp_prediction, plot_xhat, plot_gmp_statistics,
-            plot_gmp_multi_statistics]
+            plot_gmp_prediction, plot_xhat, plot_gmp_statistics]
 
         for plot_function in plot_functions:
             if measure in plot_function.__name__:
-                fig, ax = plt.subplots(figsize=(8, 5))
-                plot_function(data, fig, ax)
+                if 'hyperparameter' not in measure:
+                    fig, ax = plt.subplots(figsize=(8, 5))
+                    plot_function(data, fig, ax)
+                else:
+                    plot_function(data)
     plt.show()
 
 
@@ -73,20 +81,27 @@ def plot_amplitude(data, fig, ax):
 def plot_xy(data, fig, ax):
     fig.set_size_inches(w=10, h=8)
     for exp_run_idx, exp_run in enumerate(data):
-        if '4' in data[0]['name']:   # 4D runs
+        name = data[0]['name']
+        if '4' in name:   # 4D runs
             bound = 150
             dim = (0, 3)
-        else:                        # 2D runs
+        else:             # 2D runs
             bound = 50
             dim = (0, 1)
-        xy_data = np.array(data[exp_run_idx]['xy'])[:bound, :-1]
+        if 'ICM' in name:
+            lower_bound = data[0]['initpts'][0] + data[0]['initpts'][1]
+            xy_data = np.array(data[exp_run_idx]['xy'])[lower_bound:bound, :-1]
+        else:
+            xy_data = np.array(data[exp_run_idx]['xy'])[:bound, :-1]
         xy = np.empty((xy_data.shape[0], xy_data.shape[1]+1))
         xy[:, 0:xy_data.shape[1]] = xy_data
         xy[:, -1] = np.arange(1, xy_data.shape[0] + 1)
-        print(xy[:5,:])
         plt.scatter(xy[:, dim[0]], xy[:, dim[1]], alpha=.7, s=20,
                     c=xy[:, -1], cmap='summer')
     plt.colorbar(label='iteration')
+    gmp_xhat = np.array(data[0]['truemin'])[0][:-1]
+    plt.scatter(gmp_xhat[dim[0]], gmp_xhat[dim[1]], s=150,
+                marker='*', c='red', label=r'$\hat{x}$')
     N = len(data)
     title = f"""{data[0]["name"]}: Sampling locations
         for first {bound} points for {N} runs"""
@@ -95,8 +110,25 @@ def plot_xy(data, fig, ax):
     plt.ylabel(r'$x_2$')
 
 
-def plot_hyperparameter(data, fig, ax):
-    pass
+def plot_hyperparameter(data):
+    name = data[0]['name']
+    N_hyperparams = len(data[0]['GP_hyperparam'][0])
+    fig, axs = plt.subplots(nrows=N_hyperparams, ncols=1, sharex=True)
+    for exp_run_idx, exp_run in enumerate(data[:5]):
+        hyperparams = np.array(data[exp_run_idx]['GP_hyperparam'])
+        for i in range(hyperparams.shape[1]):
+            convergence = data[exp_run_idx]['iterations_to_gmp_convergence'][TOLERANCE_IDX]
+            label = f'convergence at {convergence}'
+            axs[i].plot(np.arange(hyperparams.shape[0]), hyperparams[:, i],
+                        label=label)
+            axs[i].axvline(x=convergence, c='k', alpha=.2, linestyle='dashed')
+        plt.xlim(0,2)
+    axs[0].set_title(name)
+        #plt.legend()
+    # for exp_run_idx, exp_run in enumerate(data):
+    #     gp_hyperparam = np.array(data['GP_hyperparam'])
+    #     plt.plot(np.arange(gp_hyperparam.shape[0]),
+    #              gp_hyperparam[0, :])
 
 
 def plot_best_acq(data, fig, ax):
@@ -124,7 +156,8 @@ def plot_gmp_prediction(data, fig, ax):
         gmp = np.array(data[exp_run_idx]['gmp'])
         convergence = exp_run['iterations_to_gmp_convergence'][TOLERANCE_IDX]
         plt.plot(np.arange(gmp.shape[0]), gmp[:, -2])
-        label = f'run {exp_run_idx+1}: convergence at {convergence}'
+        name = exp_run['exp_run']
+        label = f'{name}: convergence at {convergence}'
         plt.scatter(np.arange(gmp.shape[0]), gmp[:, -2], s=10, label=label)
 
     plt.axhline(TOLERANCE, alpha=.3, color='k', linestyle='dashed',
@@ -166,38 +199,6 @@ def plot_gmp_statistics(data, fig, ax):
     plt.ylim(-1, 3)
     if data[0]["name"] in ['2LF', '2HF', '2UHF']:
         plt.xlim(0, 30)
-    plt.ylabel('GMP')
-    plt.xlabel(r'Iteration $n$')
-    plt.legend(fontsize=15)
-    N = len(data)
-    title = f'{data[0]["name"]}: GMP stats over iteration for {N} run/s'
-    plt.title(title)
-
-
-def plot_gmp_multi_statistics(multi_data, fig, ax):
-    for data_idx, data in enumerate(multi_data):
-        gmps = np.zeros((len(data), len(data[0]['gmp'])))
-        for exp_run_idx, exp_run in enumerate(data):
-            padded_array = padd_1d_array_with_zeros(
-                np.array(data[exp_run_idx]['gmp'])[:, -2],
-                gmps[exp_run_idx, :].shape
-            )
-            gmps[exp_run_idx, :] = padded_array
-
-        gmp_mean = np.mean(gmps, axis=0)
-        gmp_var = np.var(gmps, axis=0)
-        gmp_median = np.median(gmps, axis=0)
-        x_range = np.arange(gmp_mean.shape[0])
-        name = data[0]["name"]
-        plt.plot(x_range, gmp_mean, label=f'{name} mean($y$)', c='blue')
-        plt.plot(x_range, gmp_median, label=r'median($y$)', c='blue',
-                linestyle='dashed')
-        plt.fill_between(x_range, gmp_mean - 2*gmp_var, gmp_mean + 2*gmp_var,
-                        alpha=.1, color='blue')
-    plt.axhline(TOLERANCE, alpha=.3, color='k', linestyle='dashed',
-                    label='0.1 kcal/mol tolerance')
-    plt.axhline(-TOLERANCE, alpha=.3, color='k', linestyle='dashed')
-    plt.ylim(-1, 3)
     plt.ylabel('GMP')
     plt.xlabel(r'Iteration $n$')
     plt.legend(fontsize=15)
