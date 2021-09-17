@@ -4,7 +4,7 @@ In detail
 1. TODO
 2. TODO
 
-![plot](./results/figs/pes.png)
+![plot](./pes.png)
 ## Directory structure
 This is a suggestion for a minimal directory structure suitable for different project types.
 
