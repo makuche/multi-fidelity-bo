@@ -439,6 +439,9 @@ def merge_subrun_data(subrun_file_paths, exp_idx):
         exp_idx (str): Experiment to merge (e.g. exp_1)
     """
     # TODO : TL experiments have additional keys (e.g. 'B')
+    # TODO : For the experiments that have been
+    # unfinished ('run_completed' is False),
+    # consider different stacking
     to_copy_from_first_subrun = ['header', 'truemin',
                                  'thetainit', 'thetapriorparam', 'name',
                                  'bounds', 'dim', 'tasks', 'kernel',
