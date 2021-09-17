@@ -48,35 +48,37 @@ def model(data_lf, data_hf, data_uhf):
                             sharex=True, sharey=True)
     for pes_idx, data in enumerate([data_lf, data_hf, data_uhf]):
         STS, model_data = data['STS'], data['model_data']
-        print("STS.dim", STS.dim)
+#        print("STS.dim", STS.dim)
         data['model_data'][:, -2] -= TRUEMINS_2D[NAMES[pes_idx]]
         xhat, acqs = data['xhat'], data['acqs']
         coords = model_data[:, :STS.dim]
-        mu, nu = np.sqrt(model_data[:, -2]), model_data[:, -1]
+        mu, nu = model_data[:, -2], model_data[:, -1]
         npts = STS.pp_m_slice[2]
         x1, x2 = coords[:, STS.pp_m_slice[0]], coords[:, STS.pp_m_slice[1]]
-        print("STS.pp", STS.pp_m_slice[0], STS.pp_m_slice[1], STS.pp_m_slice[2])
+#        print("STS.pp", STS.pp_m_slice[0], STS.pp_m_slice[1], STS.pp_m_slice[2])
         #amplitude = max(mu) - min(mu)
         #mu /= amplitude
         axs[pes_idx].contour(x1[:npts], x2[::npts],
-                             mu.reshape(npts, npts), 15, colors='k')
+                             mu.reshape(npts, npts), 15, colors='k', zorder=1)
         im = axs[pes_idx].contourf(x1[:npts], x2[::npts],
-                                   mu.reshape(npts, npts), 50, cmap='viridis')
+                                   mu.reshape(npts, npts), 150, cmap='inferno',
+                                   zorder=0)
         if pes_idx == 0:
-            axs[pes_idx].scatter(*xhat, c='red', marker='*', s=150, label='GMP')
+            axs[pes_idx].scatter(*xhat, c='red', marker='*', s=150,
+            label='GMP', zorder=2)
         else:
-            axs[pes_idx].scatter(*xhat, c='red', marker='*', s=150)
+            axs[pes_idx].scatter(*xhat, c='red', marker='*', s=150, zorder=2)
     fig.colorbar(im, ax=axs, shrink=0.8, location='bottom')
     axs[0].legend(fontsize=15)
-    txt = axs[0].text(-45, 285, '(a) LF', c='white',
+    txt = axs[0].text(-45, 285, '(a) LF', c='black',
                       weight='bold', fontsize=15)
-    txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='k')])
-    txt = axs[1].text(-45, 285, '(b) HF', c='white',
+    txt.set_bbox(dict(facecolor='white', alpha=0.9, edgecolor='white'))
+    txt = axs[1].text(-45, 285, '(b) HF', c='black',
                       weight='bold', fontsize=15)
-    txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='k')])
-    txt = axs[2].text(-45, 285, '(c) UHF', c='white',
+    txt.set_bbox(dict(facecolor='white', alpha=0.9, edgecolor='white'))
+    txt = axs[2].text(-45, 285, '(c) UHF', c='black',
                       weight='bold', fontsize=15)
-    txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='k')])
+    txt.set_bbox(dict(facecolor='white', alpha=0.9, edgecolor='white'))
     fig.subplots_adjust(left=0.03, right=0.99, top=0.98,
                         bottom=0.28, wspace=0.05)
     plt.show()
