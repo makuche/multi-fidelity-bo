@@ -10,6 +10,13 @@ from read_write import load_yaml, load_json, save_json
 SMALL_SIZE = 12
 MEDIUM_SIZE = 20
 LARGE_SIZE = 30
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=LARGE_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=MEDIUM_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=MEDIUM_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=MEDIUM_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=LARGE_SIZE)  # fontsize of the figure title
 
 THESIS_DIR = Path(__file__).resolve().parent.parent.parent
 FIGS_DIR = THESIS_DIR / 'results/figs/'
@@ -24,42 +31,46 @@ def main():
                         action='store_true',
                         dest='show_plots',
                         help="Show (and don't save) plots")
+    parser.add_argument('-d', '--dimension',
+                        type=str,
+                        dest='dimension',
+                        default='2D',
+                        help="Dimension to plot")
     args = parser.parse_args()
+    dim = args.dimension
+    if dim not in ['2D', '4D']: raise Exception("Chose either 2D or 4D.")
     exp_list = [THESIS_DIR / 'data' / 'processed' /
-                exp for exp in CONFIG['correlation_data']['2D']]
-    y_values = plot_y_scatter_trellis(exp_list, show_plots=args.show_plots)
-    acq_times = plot_acq_times_comparison(exp_list, show_plots=args.show_plots)
-    plot_acq_times_histograms(acq_times, NAMES, show_plots=args.show_plots)
+                exp for exp in CONFIG['correlation_data'][args.dimension]]
+    if args.dimension == '2D':
+        y_values, acq_times = load_2D_y_values_and_acq_times(exp_list)
+    elif args.dimension == '4D':
+        y_values, acq_times = load_4D_y_values_and_acq_times(exp_list)
+    plot_y_scatter_trellis(y_values, dim=dim, show_plots=args.show_plots)
+    plot_acq_times_comparison(acq_times, dim=dim, show_plots=args.show_plots)
+    plot_acq_times_histograms(acq_times, NAMES, dim=dim,
+                              show_plots=args.show_plots)
     print_correlation_matrix(y_values)
-    print_and_plot_summary_statistics(y_values, show_plots=args.show_plots)
+    print_and_plot_summary_statistics(y_values, dim=dim,
+                                      show_plots=args.show_plots)
 
 
-def plot_y_scatter_trellis(exp_list, figname='trellis_correlation.pdf',
-                           data_points=100, show_plots=False):
-    """Create scatter trellis plot of sobol que experiments.
+def load_2D_y_values_and_acq_times(exp_list, num_points=100):
+    """This amount of data wrangling deserves it's own function.
 
     Args:
-        exp_list (list): List containing the experiments .json file paths
-        figname (str, optional): File name for figure. Defaults to
-        'linear_correlation.pdf'.
+        exp_list (list): List containing paths to experiments.
+        num_points (int, optional): Number of data points. Defaults to 100.
+
+    Returns:
+        (tuple): Returns y_values and acq_times
     """
     N = len(exp_list)
-
-    plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
-    plt.rc('axes', titlesize=LARGE_SIZE)     # fontsize of the axes title
-    plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
-    plt.rc('xtick', labelsize=MEDIUM_SIZE)    # fontsize of the tick labels
-    plt.rc('ytick', labelsize=MEDIUM_SIZE)    # fontsize of the tick labels
-    plt.rc('legend', fontsize=MEDIUM_SIZE)    # legend fontsize
-    plt.rc('figure', titlesize=LARGE_SIZE)  # fontsize of the figure title
-
-    y_values = np.zeros((N, data_points))
+    y_values, acq_times = np.zeros((N, num_points)), np.zeros((N, num_points))
     for idx, exp_path in enumerate(exp_list):
         exp_runs = [exp for exp in exp_path.iterdir() if exp.is_file()]
         exp_runs.sort()
         for exp_idx, exp_run in enumerate(exp_runs):
             data = load_json(exp_run, '')
-            if exp_idx == 0: print(data['name'])
             if len(exp_runs) > 1:
                 # idxs sets the correct indexes to fill in y_values array
                 if 'exp_5' in str(exp_run):
@@ -69,37 +80,74 @@ def plot_y_scatter_trellis(exp_list, figname='trellis_correlation.pdf',
                 else:
                     idxs = (20*exp_idx, 20 + 20*exp_idx)
                 y_values[idx, idxs[0]:idxs[1]] = np.array(data['xy'])[:, -1]
+                acq_times[idx, idxs[0]:idxs[1]] = np.array(data['acq_times'])
             else:
-                y_values[idx, :] = np.array(data['xy'])[:data_points, -1]
+                y_values[idx, :] = np.array(data['xy'])[:num_points, -1]
+                acq_times[idx, :] = np.array(data['acq_times'])
+    return y_values, acq_times
 
-    fig, axs = plt.subplots(N,N, figsize=(3*N,3*N), constrained_layout=True)
+
+def load_4D_y_values_and_acq_times(exp_list, num_points=200):
+    """This amount of data wrangling deserves it's own function.
+
+    Args:
+        exp_list (list): List containing paths to experiments.
+        num_points (int, optional): Number of data points. Defaults to 200.
+
+    Returns:
+        (tuple): Returns y_values and acq_times
+    """
+    N = len(exp_list)
+    y_values, acq_times = np.zeros((N, num_points)), np.zeros((N, num_points))
+    for idx, exp_path in enumerate(exp_list):
+        exp_runs = [exp for exp in exp_path.iterdir() if exp.is_file()]
+        exp_runs.sort()
+        data = load_json(exp_runs[0], '')
+        y_values[idx, :] = np.array(data['xy'])[:num_points, -1]
+        acq_times[idx, :] = np.array(data['acq_times'][:num_points])
+    return y_values, acq_times
+
+
+def plot_y_scatter_trellis(y_values, figname='trellis_correlation.pdf',
+                           data_points=100, show_plots=False):
+    """Create scatter trellis plot of sobol que experiments.
+
+    Args:
+        exp_list (list): List containing the experiments .json file paths
+        figname (str, optional): File name for figure. Defaults to
+        'linear_correlation.pdf'.
+    """
+
+    N = y_values.shape[0]
+    fig, axs = plt.subplots(N, N, figsize=(3*N, 3*N), constrained_layout=True)
     for i in range(N):
         ax = axs[i,i]
         ax.axis('off')
         ax.text(0.5, 0.5, f'{NAMES[i]}',
             horizontalalignment='center',
             verticalalignment='center',
-            fontsize=45,
+            fontsize=35,
             transform=ax.transAxes)
-        for j in range(i+1,N):
-            ax = axs[i,j]
-            axs[i,j].scatter(y_values[j,:], y_values[i,:], marker='x', \
-                color='blue', alpha=.5)
-            ax.set_xticks(axs[0,1].get_yticks())
-            ax.set_yticks(axs[0,1].get_xticks())
+        for j in range(i+1, N):
+            ax = axs[i, j]
+            axs[i, j].scatter(y_values[j, :], y_values[i, :], marker='x',
+                              color='blue', alpha=.5, zorder=1)
+            ax.set_xticks(axs[0, 1].get_yticks())
+            ax.set_yticks(axs[0, 1].get_xticks())
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             ax.spines['left'].set_visible(False)
             ax.spines['bottom'].set_visible(False)
-            ax.tick_params(axis = 'both',
-              width = 3, length = 4)
-            lims = [
-                np.min([ax.get_xlim(), ax.get_ylim()]),  # min of both axes
-                np.max([ax.get_xlim(), ax.get_ylim()]),  # max of both axes
-                   ]
+            ax.tick_params(axis='both', width=3, length=4)
+            lims = [-5, 35]
+            # lims = [
+            #     np.min([ax.get_xlim(), ax.get_ylim()]),  # min of both axes
+            #     np.max([ax.get_xlim(), ax.get_ylim()]),  # max of both axes
+            #        ]
 
             # now plot both limits against eachother
-            ax.plot(lims, lims, linestyle='dashed', alpha=0.25, zorder=0)
+            ax.plot(lims, lims, color='k', linestyle='dashed',
+                    alpha=0.5, zorder=0)
             ax.set_aspect('equal')
             ax.set_xlim(lims)
             ax.set_ylim(lims)
@@ -111,43 +159,22 @@ def plot_y_scatter_trellis(exp_list, figname='trellis_correlation.pdf',
     axs[0,N-1].set_xticklabels([])
     axs[0,N-1].set_yticklabels([])
     if not show_plots:
-        plt.savefig(FIGS_DIR / figname, dpi=300)
+        plt.savefig(str(FIGS_DIR / figname) + '_' + args.dimension, dpi=300)
     else:
         plt.show()
     plt.close()
-    return y_values
 
 
-def plot_acq_times_comparison(exp_list, figname='acquisition_times.pdf',
+def plot_acq_times_comparison(acq_times, figname='acquisition_times.pdf',
                               num_points=100, show_plots=False):
 
-    N = len(exp_list)
+    N = acq_times.shape[0]
 
     if N == 4:
         font = {'size': 16}
     else:
         font = {'size': 20}
     plt.rc('font', **font)
-
-    acq_times = np.zeros((N, num_points))
-    for idx, exp_path in enumerate(exp_list[::-1]):
-        exp_runs = [exp for exp in exp_path.iterdir()]
-        exp_runs.sort()
-        for exp_idx, exp_run in enumerate(exp_runs):
-            data = load_json(exp_run, '')
-            if exp_idx == 0: print(data['name'])
-            # # (Prepare - hardcoded mess coming up!)
-            if len(exp_runs) > 1:
-                # idxs sets the correct indexes to fill in y_values array
-                if 'exp_5' in str(exp_run):
-                    idxs = (20*exp_idx, 19 + 20*exp_idx)
-                elif 'exp_6' in str(exp_run):
-                    idxs = (98, 100)
-                else:
-                    idxs = (20*exp_idx, 20 + 20*exp_idx)
-                acq_times[idx, idxs[0]:idxs[1]] = np.array(data['acq_times'])
-            else:
-                acq_times[idx, :] = np.array(data['acq_times'])
 
     fig, ax = plt.subplots(figsize=(9, 9), constrained_layout=True)
     for i in range(N):
@@ -174,7 +201,6 @@ def plot_acq_times_comparison(exp_list, figname='acquisition_times.pdf',
     else:
         plt.show()
     plt.close()
-    return acq_times
 
 
 def plot_acq_times_histograms(acq_times, exp_names=NAMES,
