@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+# TODO : Maybe take this to the interactive plotting script
+
 cwd = os.getcwd()                    # current working directory
 # folder name, containing the data files
 # TODO : Fix this with patlib
