@@ -1,3 +1,0 @@
-To be removed/: plot_energy_over_index.py, calculate_amplitude_statistics.py
-To be changed: plot_local_minima_convergence.py -> Maybe take this to the
-interactive plotting script
