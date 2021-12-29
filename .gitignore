@@ -1,9 +1,9 @@
 # Ignore plots
 scripts/**/*.pdf
-
 # Ignore raw and processed data
 data/**
 results/**
 
 # Ignore bytecode-compiled files
 **/__pycache__/**
+scripts/.ipynb_checkpoints/

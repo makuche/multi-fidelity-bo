@@ -18,6 +18,10 @@ baselines:
   4HFbasic0: 4HFbasic1
   4HFbasic1: 4HFbasic1
   4UHFbasic1_r: 4UHFbasic1_r
+  a1a3: a1a3
+  a1b2: a1b2
+  b1a2: b1a2
+  b1b2: b1b2
 
 # TL_experiments:
 #   experiment:
@@ -33,6 +37,9 @@ TL_experiments:
   2HFICM1:
     - [2HFbasic1, random]
     - [2LFbasic1, inorder]
+  MT_a3b7:
+    - [a1b2, random]
+    - [a1a3, inorder]
   4HFICM1:
     - [4HFbasic1, random]
     - [4LFbasic1, inorder]
@@ -48,6 +55,15 @@ TL_experiments:
   4UHFICM4_r:
     - [4UHFbasic1_r, random]
     - [4HFbasic1, inorder]
+  a3b7:
+    - [a1b2, random]
+    - [a1a3, inorder]
+  b3b1:
+    - [b1b2, random]
+    - [b1a2, inorder]
+  MT_b3b1:
+    - [b1b2, random]
+    - [b1a2, inorder]
 
 # Tolerances levels for convergence in units of kcal/mol.
 tolerances: [5, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001]
@@ -69,10 +85,10 @@ TL_experiment_plots_2D:
   2HFICM1: [2HFbasic1, 2LFbasic1]
   2UHFICM1: [2UHFbasic1_r, 2LFbasic1]
   2UHFICM2: [2UHFbasic1_r, 2HFbasic1]
+#  MT_a3b7: [a1b2, a1a3]
 TL_experiment_plots_4D:
   4HFICM1: [4HFbasic1, 4LFbasic1]
   4UHFICM1_r: [4UHFbasic1_r, 4LFbasic1]
   4UHFICM2_r: [4UHFbasic1_r, 4HFbasic1]
   4UHFICM3_r: [4UHFbasic1_r, 4LFbasic1]
   4UHFICM4_r: [4UHFbasic1_r, 4HFbasic1]
-

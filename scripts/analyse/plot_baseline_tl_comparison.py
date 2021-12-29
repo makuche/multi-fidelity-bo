@@ -19,27 +19,29 @@ AXIS_FONTSIZE = 15
 TITLE_FONTSIZE = 15
 SMALL_SIZE = 15
 
-PLOT_OPTIONS = {
+BLUE, RED = '#000082', '#FE0000'
+
+PLOT_STYLE = {
             '4UHFICM1_r': {'label': 'LF➞UHF (200 initpts)',
-                           'color': 'blue',
+                           'color': BLUE,
                            'linestyle': 'solid'},
             '4UHFICM3_r': {'label': 'LF➞UHF (100 initpts)',
-                           'color': 'blue',
+                           'color': BLUE,
                            'linestyle': 'dashdot'},
             '4UHFICM2_r': {'label': 'HF➞UHF (200 initpts)',
-                           'color': 'red',
+                           'color': RED,
                            'linestyle': 'solid'},
             '4UHFICM4_r': {'label': 'HF➞UHF (100 initpts)',
-                           'color': 'red',
+                           'color': RED,
                            'linestyle': 'dashdot'},
             '4UHFbasic1_r': {'label': '4D Baseline',
                              'color': 'k',
                              'linestyle': 'dotted'},
             '2UHFICM1': {'label': 'LF➞UHF (50 initpts)',
-                         'color': 'blue',
+                         'color': BLUE,
                          'linestyle': 'solid'},
             '2UHFICM2': {'label': 'HF➞UHF (50 initpts)',
-                         'color': 'red',
+                         'color': RED,
                          'linestyle': 'dashdot'},
             '2UHFbasic1_r': {'label': '2D Baseline',
                              'color': 'k',
@@ -54,7 +56,7 @@ plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 
 def main():
     experiment_paths = [PROCESSED_DIR.joinpath(exp) for exp in sys.argv[1:]]
-    fig, axs = plt.subplots(figsize=(16, 10))
+    fig, axs = plt.subplots(figsize=(8, 5))
     for exp_idx, experiment_path in enumerate(experiment_paths):
         experiment_runs = [exp for exp in
                            experiment_path.iterdir() if exp.is_file()]
@@ -80,13 +82,14 @@ def plot_gmp_statistics(data, fig, ax, idx):
     gmp_var = np.var(gmps, axis=0)
     # name = TITLE_DICT[data[0]["name"]]
     x_range = np.arange(gmp_mean.shape[0])
-    plt.plot(x_range, gmp_mean, **PLOT_OPTIONS[data[0]["name"]])
-    color = PLOT_DICT[data[0]["name"]]['color']
+    plt.plot(x_range, gmp_mean, **PLOT_STYLE[data[0]["name"]])
+    color = PLOT_STYLE[data[0]["name"]]['color']
     plt.fill_between(x_range, gmp_mean - 2*gmp_var, gmp_mean + 2*gmp_var,
                      alpha=.1, color=color)
     plt.axhline(TOLERANCE, alpha=.1, color='k', linestyle='dashed')
     plt.axhline(-TOLERANCE, alpha=.1, color='k', linestyle='dashed')
-    plt.ylim(-1, 3)
+    upper_bound = 1.6 if TOLERANCE == 0.1 else 2.6
+    plt.ylim(-1, upper_bound)
     if data[0]["name"] in ['2LF', '2HF', '2UHF']:
         plt.xlim(0, 30)
     plt.ylabel('GMP')

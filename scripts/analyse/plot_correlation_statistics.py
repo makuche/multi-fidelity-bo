@@ -21,8 +21,12 @@ plt.rc('figure', titlesize=LARGE_SIZE)  # fontsize of the figure title
 THESIS_DIR = Path(__file__).resolve().parent.parent.parent
 FIGS_DIR = THESIS_DIR / 'results/figs/'
 CONFIG = load_yaml(THESIS_DIR.joinpath('scripts'), '/config.yaml')
-
+# cyan: #3EE1D1, orange: #FF8C00
+# blue: #000082, red: #FE0000
+SCATTER_DICT_2D = {'marker': 'x', 'color': '#000082', 'alpha': 1}
+SCATTER_DICT_4D = {'marker': 'x', 'color': '#FE0000', 'alpha': 1}
 NAMES = ['LF', 'HF', 'UHF']
+COLORS = ['blue', 'orange']
 
 
 def main():
@@ -31,27 +35,21 @@ def main():
                         action='store_true',
                         dest='show_plots',
                         help="Show (and don't save) plots")
-    parser.add_argument('-d', '--dimension',
-                        type=str,
-                        dest='dimension',
-                        default='2D',
-                        help="Dimension to plot")
     args = parser.parse_args()
-    dim = args.dimension
-    if dim not in ['2D', '4D']: raise Exception("Chose either 2D or 4D.")
-    exp_list = [THESIS_DIR / 'data' / 'processed' /
-                exp for exp in CONFIG['correlation_data'][args.dimension]]
-    if args.dimension == '2D':
-        y_values, acq_times = load_2D_y_values_and_acq_times(exp_list)
-    elif args.dimension == '4D':
-        y_values, acq_times = load_4D_y_values_and_acq_times(exp_list)
-    plot_y_scatter_trellis(y_values, dim=dim, show_plots=args.show_plots)
-    plot_acq_times_comparison(acq_times, dim=dim, show_plots=args.show_plots)
-    plot_acq_times_histograms(acq_times, NAMES, dim=dim,
-                              show_plots=args.show_plots)
-    print_correlation_matrix(y_values)
-    print_and_plot_summary_statistics(y_values, dim=dim,
-                                      show_plots=args.show_plots)
+    exp_list_2D = [THESIS_DIR / 'data' / 'processed' /
+                   exp for exp in CONFIG['correlation_data']['2D']]
+    exp_list_4D = [THESIS_DIR / 'data' / 'processed' /
+                   exp for exp in CONFIG['correlation_data']['4D']]
+    y_values_2D, acq_times = load_2D_y_values_and_acq_times(exp_list_2D)
+    y_values_4D = load_4D_y_values(exp_list_4D)
+    plot_acq_times_comparison(acq_times, show_plots=args.show_plots)
+    # plot_acq_times_histograms(acq_times, NAMES, show_plots=args.show_plots)
+    for y_values in [y_values_2D, y_values_4D]:
+        print_correlation_matrix(y_values)
+    #    print_and_plot_summary_statistics(y_values,
+    #                                      show_plots=args.show_plots)
+    #plot_correlation([y_values_2D, y_values_4D], show_plots=args.show_plots)
+    plot_correlation_coefficient([y_values_2D, y_values_4D])
 
 
 def load_2D_y_values_and_acq_times(exp_list, num_points=100):
@@ -87,7 +85,7 @@ def load_2D_y_values_and_acq_times(exp_list, num_points=100):
     return y_values, acq_times
 
 
-def load_4D_y_values_and_acq_times(exp_list, num_points=200):
+def load_4D_y_values(exp_list, num_points=200):
     """This amount of data wrangling deserves it's own function.
 
     Args:
@@ -98,70 +96,49 @@ def load_4D_y_values_and_acq_times(exp_list, num_points=200):
         (tuple): Returns y_values and acq_times
     """
     N = len(exp_list)
-    y_values, acq_times = np.zeros((N, num_points)), np.zeros((N, num_points))
+    # y_values, acq_times = np.zeros((N, num_points)), np.zeros((N, num_points))
+    y_values = np.zeros((N, num_points))
     for idx, exp_path in enumerate(exp_list):
         exp_runs = [exp for exp in exp_path.iterdir() if exp.is_file()]
         exp_runs.sort()
         data = load_json(exp_runs[0], '')
         y_values[idx, :] = np.array(data['xy'])[:num_points, -1]
-        acq_times[idx, :] = np.array(data['acq_times'][:num_points])
-    return y_values, acq_times
+        # acq_times[idx, :] = np.array(data['acq_times'][:num_points])
+    return y_values    # return y_values, acq_times
 
 
-def plot_y_scatter_trellis(y_values, figname='trellis_correlation.pdf',
-                           data_points=100, show_plots=False):
-    """Create scatter trellis plot of sobol que experiments.
-
-    Args:
-        exp_list (list): List containing the experiments .json file paths
-        figname (str, optional): File name for figure. Defaults to
-        'linear_correlation.pdf'.
-    """
-
-    N = y_values.shape[0]
-    fig, axs = plt.subplots(N, N, figsize=(3*N, 3*N), constrained_layout=True)
-    for i in range(N):
-        ax = axs[i,i]
-        ax.axis('off')
-        ax.text(0.5, 0.5, f'{NAMES[i]}',
-            horizontalalignment='center',
-            verticalalignment='center',
-            fontsize=35,
-            transform=ax.transAxes)
-        for j in range(i+1, N):
-            ax = axs[i, j]
-            axs[i, j].scatter(y_values[j, :], y_values[i, :], marker='x',
-                              color='blue', alpha=.5, zorder=1)
-            ax.set_xticks(axs[0, 1].get_yticks())
-            ax.set_yticks(axs[0, 1].get_xticks())
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
-            ax.spines['left'].set_visible(False)
-            ax.spines['bottom'].set_visible(False)
-            ax.tick_params(axis='both', width=3, length=4)
-            lims = [-5, 35]
-            # lims = [
-            #     np.min([ax.get_xlim(), ax.get_ylim()]),  # min of both axes
-            #     np.max([ax.get_xlim(), ax.get_ylim()]),  # max of both axes
-            #        ]
-
-            # now plot both limits against eachother
-            ax.plot(lims, lims, color='k', linestyle='dashed',
-                    alpha=0.5, zorder=0)
-            ax.set_aspect('equal')
-            ax.set_xlim(lims)
-            ax.set_ylim(lims)
-
-        # remove below-diagonal plots
-        for j in range(i):
-            ax = axs[i,j]
-            ax.axis('off')
-    axs[0,N-1].set_xticklabels([])
-    axs[0,N-1].set_yticklabels([])
-    if not show_plots:
-        plt.savefig(str(FIGS_DIR / figname) + '_' + args.dimension, dpi=300)
-    else:
+def plot_correlation(y_values, figname='correlation.pdf',
+                                    show_plots=False):
+    N = y_values[0].shape[0]
+    fig, axs = plt.subplots(1, N, figsize=(4*N, 4), constrained_layout=True)
+    for values_idx, values in enumerate(y_values):
+        i = values_idx
+        SCATTER_STYLE = SCATTER_DICT_2D if values_idx == 0 else SCATTER_DICT_4D
+        label = '2D' if values_idx == 0 else '4D'
+        axs[0].scatter(values[0, :], values[1, :],
+                       **SCATTER_STYLE, zorder=1-i, label=label)
+        axs[1].scatter(values[0, :], values[2, :],
+                       **SCATTER_STYLE, zorder=1-i)
+        axs[2].scatter(values[1, :], values[2, :],
+                       **SCATTER_STYLE, zorder=1-i)
+    axs[0].legend(fontsize=18)
+    axs[0].set_xlabel('LF')
+    axs[0].set_ylabel('HF')
+    axs[1].set_xlabel('LF')
+    axs[1].set_ylabel('UHF')
+    axs[2].set_xlabel('HF')
+    axs[2].set_ylabel('UHF')
+    for i in range(3):
+        axs[i].set_xticks([0, 10, 20, 30])
+        axs[i].set_yticks([0, 10, 20, 30])
+        axs[i].set_xlim(-2, 35)
+        axs[i].set_ylim(-2, 35)
+        axs[i].spines['right'].set_visible(False)
+        axs[i].spines['top'].set_visible(False)
+    if show_plots:
         plt.show()
+    else:
+        plt.savefig(FIGS_DIR / figname, dpi=300)
     plt.close()
 
 
@@ -176,25 +153,27 @@ def plot_acq_times_comparison(acq_times, figname='acquisition_times.pdf',
         font = {'size': 20}
     plt.rc('font', **font)
 
-    fig, ax = plt.subplots(figsize=(9, 9), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(11, 8), constrained_layout=True)
     for i in range(N):
-        mean = np.mean(acq_times[i,:])
-        std_dev = np.std(acq_times[i,:])
-        ax.bar(i, mean, align='center', alpha=.5,
-            log=True, color='blue')
+        mean = np.mean(acq_times[i,:])/60
+        std_dev = np.std(acq_times[i,:])/60
+        ax.bar(i, mean, align='center', alpha=.7,
+            log=True, color='#000082')
         val = str(f'{round(mean,2)}') + r'$\pm$' + \
             str(f'{round(std_dev,2)}')
+        print(i, val)
         if i < 2:
-            ax.annotate(val, [i-0.3, mean+0.1*mean])
+            ax.annotate(val, [i-0.25, mean+0.1*mean])
         elif i == 2:
-            ax.annotate(val, [i-0.55, mean+0.1*mean])
+            ax.annotate(val, [i-0.30, mean+0.1*mean])
         else:
             ax.annotate(val, [i-0.55, mean+0.1*mean])
     ax.set_xticks(np.arange(N))
-    names = NAMES[::-1]
-    ax.set_xticklabels(names[:N])
+    NAMES = ['Force fields', 'DFT', 'Quantum chemistry']
+    ax.set_xticklabels(NAMES[:N])
     # ax.set_xlabel('fidelity')
-    ax.set_ylabel('mean acq. time [s]')
+    ax.set_ylabel('mean acq. time [min]')
+#    ax.set_ylim(1, 3e4)
     plt.title(r' Acquisition times in format $\bar{t} \pm \sigma$')
     if not show_plots:
         plt.savefig(FIGS_DIR / figname, dpi=300)
@@ -209,15 +188,15 @@ def plot_acq_times_histograms(acq_times, exp_names=NAMES,
     N = acq_times.shape[0] // 2
     if N % 2 == 0:
         N = acq_times.shape[0] // 2
-        fig, axs = plt.subplots(nrows=N, ncols= N, figsize=(9, 9),
+        fig, axs = plt.subplots(nrows=N, ncols=N, figsize=(9, 9),
                                 constrained_layout=True)
         for i in range(acq_times.shape[0]):
             ax = axs[i // 2][i % 2]
-            ax.hist(acq_times[i, :], bins=50, alpha=.5, color='blue')
+            ax.hist(acq_times[i, :], bins=50, alpha=.7, color='#000082')
             ax.axvline(acq_times[i, :].mean(), color='k', linestyle='dashed',
-                    linewidth=3, label='mean')
-            ax.axvline(np.median(acq_times[i, :]), color='r', linestyle='dashed',
-                    linewidth=3, alpha=.3, label='median')
+                       linewidth=3, label='mean')
+            ax.axvline(np.median(acq_times[i, :]), color='#FE0000',
+                       linestyle='dashed', linewidth=3, label='median')
             ax.set_title(exp_names[i])
             ax.set_xlabel(r'$t$ [s]')
             axs[N-1, N-1].legend()
@@ -227,13 +206,13 @@ def plot_acq_times_histograms(acq_times, exp_names=NAMES,
                                 constrained_layout=True)
         for i in range(acq_times.shape[0]):
             ax = axs[i]
-            ax.hist(acq_times[i, :], bins=50, alpha=.5, color='blue')
-            ax.axvline(acq_times[i, :].mean(), color='k', linestyle='dashed',
-                    linewidth=3,
-                    label=f'mean: {round(acq_times[i, :].mean(), 2)}')
-            ax.axvline(np.median(acq_times[i, :]), color='r',
-                       linestyle='dashed', linewidth=3, alpha=.3,
-                       label=f'median: {round(np.median(acq_times[i, :]), 2)}')
+            ax.hist(acq_times[i, 1:], bins=50, alpha=.7, color='#000082')
+            ax.axvline(acq_times[i, 1:].mean(), color='k', linestyle='dashed',
+                       linewidth=3,
+                       label=f'mean: {round(acq_times[i, 1:].mean(), 2)}')
+            ax.axvline(np.median(acq_times[i, 1:]), color='#FE0000',
+                       linestyle='dashed', linewidth=3,
+                       label=f'median: {round(np.median(acq_times[i, 1:]), 2)}')
             ax.set_title(exp_names[i])
             ax.set_xlabel(r'$t$ [s]')
             axs[i].legend()
@@ -288,11 +267,40 @@ def print_and_plot_summary_statistics(y_values, show_plots=False):
         summary_statistics[exp_idx] = stats
     print("Mean, variance, min, max, amplitude, perc_25, perc_75")
     print(summary_statistics.round(2))
-    if show_plots:
-        fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(9, 6))
-        axs.boxplot(y_values.T, vert=True, patch_artist=True, labels=NAMES)
-        axs.set_ylabel("Observed values")
-        plt.show()
+    # if show_plots:
+    #     fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(9, 6))
+    #     axs.boxplot(y_values.T, vert=True, patch_artist=True, labels=NAMES)
+    #     axs.set_ylabel("Observed values")
+    #     plt.show()
+
+
+def plot_correlation_coefficient(y_values, show_plots=False):
+    titles = ('Cross-covariance', 'Correlation coefficient')
+    functions = (np.cov, np.corrcoef)
+    for title, function in zip(titles, functions):
+        fig, axs = plt.subplots(1, 2, figsize=(12, 6), sharey=True)
+        for val_idx, values in enumerate(y_values):
+            iterations = values.shape[1]
+            correlations = np.array([function(values[:, :iter_]).round(decimals=3)
+                            for iter_ in range(3, iterations)])
+            axs[val_idx].plot(np.arange(len(correlations)), correlations[:, 0, 1],
+                    label='B(LF,HF)')
+            axs[val_idx].plot(np.arange(len(correlations)), correlations[:, 0, 2],
+                    label='B(LF,UHF)')
+            axs[val_idx].plot(np.arange(len(correlations)), correlations[:, 1, 2],
+                    label='B(HF,UHF)')
+            axs[val_idx].set_xlabel('iteration')
+            axs[0].set_ylabel(title)
+            axs[val_idx].legend()
+        axs[0].set_title('2D', fontsize=12)
+        axs[1].set_title('4D', fontsize=12)
+        fig.suptitle(
+            f'{title} between the fidelities over iteration', fontsize=18)
+        if not show_plots:
+            plt.savefig(FIGS_DIR /  f'{title}.pdf', dpi=300)
+        else:
+            plt.show()
+        plt.close()
 
 
 if __name__ == '__main__':

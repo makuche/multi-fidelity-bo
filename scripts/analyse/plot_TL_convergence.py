@@ -20,9 +20,10 @@ FIGS_DIR = THESIS_DIR / 'results/figs'
 CONFIG = load_yaml(THESIS_DIR / 'scripts', '/config.yaml')
 #print(CONFIG["tolerances"])
 #TOL_IDX = 3         # 5 : 0.1 kcal/mol, 3 : 0.5 kcal/mol
-SCATTER_DICT = {'color': 'blue', 'alpha': .4, 'marker': 'x',
-                'label': 'observation'}
-MEANS_DICT = {'color': 'red', 'marker': '*', 's': 100}
+BLUE, RED = '#000082', '#FE0000'
+SCATTER_DICT = {'color': BLUE, 'alpha': .4, 'marker': 'x',
+                'label': 'observation', 's': 60}
+MEANS_DICT = {'color': RED, 'marker': '*', 's': 120, 'label': 'mean'}
 TITLE_DICT = {'4D': {'4HFICM1': 'LF ➞ HF',
                      '4UHFICM1_r': 'LF ➞ UHF',
                      '4UHFICM2_r': 'HF ➞ UHF',
@@ -30,12 +31,14 @@ TITLE_DICT = {'4D': {'4HFICM1': 'LF ➞ HF',
                      '4UHFICM4_r': 'HF ➞ UHF'},
               '2D': {'2HFICM1': 'LF ➞ HF',
                      '2UHFICM1': 'LF ➞ UHF',
-                     '2UHFICM2': 'HF ➞ UHF'}}
+                     '2UHFICM2': 'HF ➞ UHF',
+                     'MT_a3b7': 'MT_a3b7'}}
 PLOT_IDX_DICT = {'4D': {'4HFICM1': 0, '4UHFICM1_r': 1, '4UHFICM2_r': 2,
                  '4UHFICM3_r': 1, '4UHFICM4_r': 2},
                  '2D': {'2HFICM1': 0,
                      '2UHFICM1': 1,
-                     '2UHFICM2': 2}}
+                     '2UHFICM2': 2,
+                     'MT_a3b7': 0}}
 SMALL_SIZE, MEDIUM_SIZE, LARGE_SIZE = 12, 20, 25
 
 
@@ -46,14 +49,20 @@ def main(args):
         raise Exception(f"Invalid tolerance level, chose from {tolerances}")
     TOL_IDX = np.argwhere(args.tolerance == tolerances).squeeze()
     config = CONFIG[f'TL_experiment_plots_{args.dimension}']
-    figname = args.dimension + '_tol_' + str(tolerance) + '_TL.pdf'
+    figname = args.dimension + '_tol_' + str(tolerance) + '_TL.png'
     tl_experiments = [THESIS_DIR / 'data' / 'processed' /
                       exp for exp in config.keys()]
-    baseline_experiments = [THESIS_DIR / 'data' / 'processed' /
+    bl_experiments = [THESIS_DIR / 'data' / 'processed' /
                             config[exp][0] for exp in config]
-    tl_experiment_data = load_experiments(tl_experiments)
-    baseline_experiment_data = load_experiments(baseline_experiments)
-    plot_tl_convergence(figname, baseline_experiment_data, tl_experiment_data,
+    tl_exp_data = load_experiments(tl_experiments)
+    bl_exp_data = load_experiments(bl_experiments)
+    data_dict = {
+        'bl': load_values_to_dict(bl_exp_data),
+        'tl': load_values_to_dict(tl_exp_data)
+    }
+    # plot_TL_convergence(figname, data_dict, tol_idx=TOL_IDX,
+    #                     show_plots=args.show_plots)
+    plot_tl_convergence(figname, bl_exp_data, tl_exp_data,
                         tol_idx=TOL_IDX, show_plots=args.show_plots)
 
 
@@ -68,6 +77,32 @@ def load_experiments(experiments):
     return experiments_data
 
 
+def load_values_to_dict(data, tol_idx=5):
+    # dict (key: bl/tl) -> dict (key: values,times) -> list -> dict (key: initpts[1])
+    # Example for baseline strucutres:
+    # 3 baseline runs (LF, HF, UHF) -> 30/5/5 subruns
+    data_dict, values, times = {}, [], []
+
+    for fidelity in data:
+        conv_vals, conv_times = {}, {}
+        for exp_run_idx, exp_run in enumerate(fidelity):
+            initpts = exp_run['initpts'][1]
+            if initpts not in conv_vals:
+                conv_vals[initpts] = []
+            conv_vals[initpts].append(
+                exp_run['iterations_to_gmp_convergence'][tol_idx])
+            if initpts not in conv_times:
+                conv_times[initpts] = []
+            conv_times[initpts].append(
+                exp_run['totaltime_to_gmp_convergence'][tol_idx])
+        values.append(conv_vals)
+        times.append(conv_times)
+    # returns lists with shape [len(30), len(5), len(5)]
+    data_dict['values'] = values
+    data_dict['times'] = times
+    return data_dict
+
+
 def plot_tl_convergence(figname, baseline_experiments, tl_experiments,
                         tol_idx=5, show_plots=False):
     N = len(tl_experiments)
@@ -80,7 +115,13 @@ def plot_tl_convergence(figname, baseline_experiments, tl_experiments,
         tl_data = tl_experiments[exp_idx]
         max_iterations, max_time = 0, 0         # used to scale axes
         idx = None
-        for bl, tl, in zip(baseline_data, tl_data):
+        for data_idx, (bl, tl,) in enumerate(zip(baseline_data, tl_data)):
+            # I accidentally did 30 experiments for the LF->HF experiments,
+            # but as it turns out, 10 runs gives the same mean statistics,
+            # so it's sufficient to plot only 10 runs (also plotting
+            # all 30 runs looks messy)
+            if data_idx > 10:
+                break
             name = tl['name']
             idx = PLOT_IDX_DICT[args.dimension][name]
             bl_initpts, tl_initpts = bl['initpts'][1], tl['initpts'][1]
@@ -125,8 +166,12 @@ def plot_tl_convergence(figname, baseline_experiments, tl_experiments,
         axs[0, idx].set_title(f'{TITLE_DICT[args.dimension][name]}',
                     fontsize=SMALL_SIZE)
         axs[0, idx].set_xticks([])
-        # axs[1, exp_idx].set_title(f'TL: {round(100, 1)} % baseline resources',
-        #             fontsize=10)
+        axs[1, idx].set_title(f'TL: {round(100, 1)} % baseline resources',
+                    fontsize=10)
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    axs[0, 0].legend(by_label.values(), by_label.keys(), fontsize=12,
+               loc='upper right')
     axs[0, 0].set_ylabel('BO iterations', fontsize=SMALL_SIZE)
     axs[1,0].set_ylabel('CPU time [h]', fontsize=SMALL_SIZE)
     for ax in axs[1, :]:
@@ -149,6 +194,7 @@ if __name__ == '__main__':
                         help="Show (and don't save) plots.")
     parser.add_argument('-d', '--dimension',
                         type=str,
+                        default='2D',
                         help="Chose between 2D or 4D.")
     parser.add_argument('-t', '--tolerance',
                         type=float,
