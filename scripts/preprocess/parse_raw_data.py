@@ -191,10 +191,7 @@ def main():
                     filename = str(data_path).split('/')[-1].split('.')[0]
                     data = load_json(str(data_path), '')
                     data['truemin'] = truemin
-                    print(data['name'], data['truemin'])
-                    print("GMP", data['gmp'][:1])
                     data = preprocess.preprocess(data, tolerances)
-                    print("GMP", data['gmp'][:1], "\n\n")
                     save_json(data, str(PROCESSED_DATA_DIR) + f'/{exp}',
                               f'/{filename}.json')
 
@@ -269,6 +266,9 @@ def create_parsed_dict(data_folder):
             exp_runs = sorted(exp_runs, key=lambda run:
                               int(run.split(sep='_')[-1]))
             data_dict[exp_name] = exp_runs
+    mt_keys = [key for key in data_dict if 'MT' in key]
+    for key in mt_keys:
+        del data_dict[key]
     save_json(data_dict, PROCESSED_DATA_DIR, '/parsed_dict.json')
     return data_dict
 
@@ -441,7 +441,10 @@ def merge_subrun_data(subrun_file_paths, exp_idx):
     # TODO : TL experiments have additional keys (e.g. 'B')
     # TODO : For the experiments that have been
     # unfinished ('run_completed' is False),
-    # consider different stacking
+    # consider different stacking methods for different parameters
+    # --> Here, it might be sufficient already to do
+    #  if run_completed: continue
+    # for some parameters
     to_copy_from_first_subrun = ['header', 'truemin',
                                  'thetainit', 'thetapriorparam', 'name',
                                  'bounds', 'dim', 'tasks', 'kernel',
@@ -489,6 +492,9 @@ def merge_subrun_data(subrun_file_paths, exp_idx):
         merged_results[key] = []
         if key == 'gmp':
             for idx, subrun in enumerate(subrun_results):
+                if idx != len(subrun_results) - 1 and \
+                   subrun['run_completed'][0] is False:
+                    continue
                 values = subrun[key]
                 if idx != 0:
                     values = values[1:] # First gmp from next subrun should
@@ -526,12 +532,15 @@ def merge_subrun_data(subrun_file_paths, exp_idx):
                     else:
                         merged_results[key][value_idx] = subrun_initpts + \
                             value - initial_initpts
-        # TODO : Check if this is now  working properly for restarted runs
         if key == 'totaltime_to_gmp_convergence':
             current_run_time = 0
+            #previous_values, previous_run_completed = None, None
             for subrun_idx, subrun in enumerate(subrun_results):
                 if subrun_idx == 0:
                     merged_results[key] = copy.deepcopy(subrun[key])
+                    previous_values = copy.deepcopy(
+                        subrun['iterations_to_gmp_convergence'])
+                    previous_run_completed = subrun['run_completed'][0]
                     current_run_time += subrun['total_time'][-1]
                 else:
                     values = subrun[key]
@@ -548,9 +557,23 @@ def merge_subrun_data(subrun_file_paths, exp_idx):
                             else:
                                 continue
                         else:
-                            delta = current_run_time
-                            merged_results[key][value_idx] = values[value_idx] + delta
-        # if merged_results['totaltime_to_gmp_convergence'] is not None:
+                            if previous_run_completed:
+                                merged_results[key][value_idx] = \
+                                    values[value_idx] + current_run_time
+                            else:
+                                # Only update, if in the continued run a new
+                                # convergence tolerance was reached
+                                prev_value = previous_values[value_idx]
+                                if prev_value is None and value is not None:
+                                    merged_results[key][value_idx] = \
+                                        values[value_idx] + current_run_time
+                                elif value - prev_value != 0:
+                                    merged_results[key][value_idx] = \
+                                        values[value_idx] + current_run_time
+                                else:
+                                    continue
+                    previous_values = copy.deepcopy(BO_iter_values)
+                    previous_run_completed = subrun['run_completed'][0]
         # TODO : Implement, this is not working yet (but also not used)
         if key == 'total_time':
             time_shift = 0
