@@ -17,9 +17,9 @@ tests/                          #  Tests for the pre-processing
 ```
 
 ```mermaid
-  graph TD;
-      Raw Data -- scripts/preprocess --> Pre-processed Data;
-      Pre-processed Data -- scripts/parse --> Extract Data of Interest;
-      Extract Data of Interest -- scripts/analyse --> Generate Plots;
-      Extract Data of Interest -- scripts/analyse --> Evaluate Statistics;
+    flowchart TD;
+    A[Raw Data - BOSS output files] -- scripts/preprocess/ --> B[Pre-processed Data ];
+    B -- scripts/parse/ --> C[Data of Interest];
+    C -- scripts/analyse/ --> D[Generate Plots];
+    C -- scripts/analyse/ --> E[Calculate Statistics];
 ```

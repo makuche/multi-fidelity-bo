@@ -3,7 +3,7 @@ scripts/**/*.pdf
 # Ignore raw and processed data
 data/**
 results/**
-
+env/
 # Ignore bytecode-compiled files
 **/__pycache__/**
 scripts/.ipynb_checkpoints/
