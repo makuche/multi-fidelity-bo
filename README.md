@@ -22,4 +22,3 @@ tests/                          #  Tests for the pre-processing
     B -- scripts/parse/ --> C[Data of Interest];
     C -- scripts/analyse/ --> D[Generate Plots];
     C -- scripts/analyse/ --> E[Calculate Statistics];
-```
