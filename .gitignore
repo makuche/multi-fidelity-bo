@@ -1,9 +1,12 @@
-# Ignore plots
-scripts/**/*.pdf
-# Ignore raw and processed data
+
+# Ignore data, plots and environment folder
 data/**
 results/**
 env/
-# Ignore bytecode-compiled files
-**/__pycache__/**
-scripts/.ipynb_checkpoints/
+
+# Ignores Bytecode-compiled files across the repo
+**/__pycache__/
+**/.ipynb_checkpoints/
+
+# Misc
+misc/

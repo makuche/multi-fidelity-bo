@@ -86,6 +86,8 @@ def create_dataframe(df, baseline_experiments, tl_experiments):
                 con_it = run['iterations_to_gmp_convergence']
                 con_time = run['totaltime_to_gmp_convergence']
                 for tol_idx, tol in enumerate(TOLERANCES):
+                    if con_time[tol_idx] is not None:
+                        con_time[tol_idx] /= 3600 
                     print(f'Totaltime [{tol} kcal/mol]', con_time[tol_idx])
                     tmp_dict[f'Iterations [{tol} kcal/mol]'] = con_it[tol_idx]
                     tmp_dict[f'Totaltime [{tol} kcal/mol]'] = con_time[tol_idx]
