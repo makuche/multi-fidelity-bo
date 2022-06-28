@@ -6,33 +6,79 @@ import shutil
 
 from pathlib import Path
 
-# TODO Put here what is currently out_puhti
-DATA_DIR = Path(__file__).resolve().parent.parent  / 'data'
-DATA_DIR = DATA_DIR / 'merge_outputs/'
-
+DATA_DIR = Path(__file__).resolve().parent.parent.parent  / 'data'
+FOLDERS_TO_IGNORE = ['baselines', 'old', 'template', 'tmp', 'misc']
 
 @click.command()
-@click.option('--setup', required=True, help='Experimental setup')
+@click.option('--all_setups', default=False, is_flag=True,
+              help='Merge all experiments that contain subfolders.')
+@click.option('--setup', required=False, default=None,
+              help='Experimental setup')
 @click.option('--path', required=True, default=DATA_DIR,
               help='Experimental setup')
-@click.option('--all', is_flag=True, default=False)
 
-def main(setup, path):
-    data_dir = Path(path) / setup
-    print(path)
-    exit()
-    experiments = [exp for exp in data_dir.iterdir() if (exp.is_dir()
-                   and 'template' not in exp.name)]
-    experiments.sort()
-    for exp_path in experiments:
-        outfile_text = merge_subrun_output_files(exp_path)
-        # Save new output file
-        with open(exp_path / 'boss.out', 'w') as f:
-            f.write(outfile_text)
 
-        # Copy last rst file
-        copy_last_rst_file(exp_path)
-#        shutil.copy(exp_path / 'boss.rst', exp_path)
+def main(all_setups, setup, path):
+    """Merges the output files of all subruns of a given setup.
+    If no setup is given, all setups found in the data directory, that
+    contain subruns, are merged.
+
+    Parameters
+    ----------
+    setup : str
+        Name of experiment, e.g. '4UHF_ICM2_ELCB1_1'.
+    path : str
+        Path to the directory.
+    """
+    if (all_setups is False) and (setup is None):
+        raise Exception('Either --all_setups or --setup must be given.')
+    if setup is None:
+        setups = get_setups()
+    for setup in setups:
+        print(f"Merging the subrun files from {str(setup).split('/')[-1]}")
+        data_dir = Path(path) / setup
+        experiments = [exp for exp in data_dir.iterdir() if (exp.is_dir()
+                       and 'template' not in exp.name)]
+        experiments.sort()
+        for exp_path in experiments:
+            outfile_text = merge_subrun_output_files(exp_path)
+            # Save new output file
+            with open(exp_path / 'boss.out', 'w') as f:
+                f.write(outfile_text)
+
+            # Copy last rst file
+            copy_last_rst_file(exp_path)
+    #        shutil.copy(exp_path / 'boss.rst', exp_path)
+
+
+def get_setups():
+    """Returns list of all setups found in the directory, which contain
+    subruns.
+    """
+    multi_task_experiment_dir = DATA_DIR / 'multi_task_learning/raw'
+    setups = [setup for setup in multi_task_experiment_dir.iterdir()
+              if setup.is_dir() and str(setup) not in FOLDERS_TO_IGNORE]
+    setups.sort()
+    setups = filter_for_setups_with_subruns(setups, 'subrun')
+    return setups
+
+
+def filter_for_setups_with_subruns(paths, string):
+    setups = []
+    for path in paths:
+        flag = False
+        experiments = [exp for exp in path.iterdir() if (exp.is_dir()
+                       and str(exp) not in FOLDERS_TO_IGNORE)]
+        for exp in experiments:
+            folders_in_exp_folder = [folder for folder in exp.iterdir()]
+            for folder in folders_in_exp_folder:
+                if folder.is_dir() and string in folder.name:
+                    flag = True
+                    break
+            if flag:
+                setups.append(path)
+                break
+    return setups
 
 
 def merge_subrun_output_files(data_dir):
