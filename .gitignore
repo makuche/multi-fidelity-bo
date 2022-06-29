@@ -3,6 +3,7 @@
 data/**
 results/**
 env/
+src.egg-info/
 
 # Ignores Bytecode-compiled files across the repo
 **/__pycache__/
