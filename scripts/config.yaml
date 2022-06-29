@@ -51,7 +51,7 @@ TL_experiments:
     - [4HFbasic1, inorder]
 
 # Tolerances levels for convergence in units of kcal/mol.
-tolerances: [5, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001]
+tolerances: [5, 2, 1, 0.5, 0.23, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001]
 
 # List of runs which are used to calculate correlation statistics
 correlation_data:

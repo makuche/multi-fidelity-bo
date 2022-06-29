@@ -42,9 +42,9 @@ def main(args):
     TOL_IDX = np.argwhere(args.tolerance == tolerances).squeeze()
     config = CONFIG[f'TL_experiment_plots_{args.dimension}']
     figname = args.dimension + '_tol_' + str(tolerance) + '_TL.png'
-    tl_experiments = [THESIS_DIR / 'data' / 'processed' /
+    tl_experiments = [THESIS_DIR / 'data/transfer_learning' / 'processed' /
                       exp for exp in config.keys()]
-    bl_experiments = [THESIS_DIR / 'data' / 'processed' /
+    bl_experiments = [THESIS_DIR / 'data/transfer_learning' / 'processed' /
                             config[exp][0] for exp in config]
     tl_exp_data = load_experiments(tl_experiments)
     bl_exp_data = load_experiments(bl_experiments)
@@ -168,8 +168,6 @@ def plot_tl_convergence(figname, baseline_experiments, tl_experiments,
         axs[0, idx].set_title(f'{TITLE_DICT[args.dimension][name]}',
                     fontsize=SMALL_SIZE)
         axs[0, idx].set_xticks([])
-        axs[1, idx].set_title(f'TL: {round(100, 1)} % baseline resources',
-                    fontsize=10)
     for setup_idx, setup in enumerate(linear_reg_data):
         linear_reg_data[setup] = np.unique(linear_reg_data[setup], axis=0)
         x, y = linear_reg_data[setup][:, 0], linear_reg_data[setup][:, 1]
