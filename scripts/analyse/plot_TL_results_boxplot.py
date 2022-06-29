@@ -1,5 +1,8 @@
+from posixpath import split
 import numpy as np
 import matplotlib.pyplot as plt
+plt.rcParams.update({"text.usetex": True, "font.size": 12})  # Tex rendering
+import seaborn as sns
 import pandas as pd
 import click
 
@@ -12,12 +15,7 @@ from src.read_write import load_yaml, load_json
 THESIS_DIR = Path(__file__).resolve().parent.parent.parent
 FIGS_DIR = THESIS_DIR / 'results/figs'
 CONFIG = load_yaml(THESIS_DIR / 'scripts', '/config.yaml')
-#print(CONFIG["tolerances"])
-#TOL_IDX = 3         # 5 : 0.1 kcal/mol, 3 : 0.5 kcal/mol
-BLUE, RED = '#000082', '#FE0000'
-SCATTER_DICT = {'color': BLUE, 'alpha': .4, 'marker': 'x',
-                'label': 'observation', 's': 60}
-MEANS_DICT = {'color': RED, 'marker': '*', 's': 120, 'label': 'mean'}
+
 TITLE_DICT = {'4D': {'4HFICM1': 'LF ➞ HF',
                      '4UHFICM1_r': 'LF ➞ UHF',
                      '4UHFICM2_r': 'HF ➞ UHF',
@@ -31,16 +29,23 @@ PLOT_IDX_DICT = {'4D': {'4HFICM1': 0, '4UHFICM1_r': 1, '4UHFICM2_r': 2,
                  '4UHFICM3_r': 1, '4UHFICM4_r': 2},
                  '2D': {'2HFICM1': 0,
                      '2UHFICM1': 1,
-                     '2UHFICM2': 2,
-                     'MT_a3b7': 0}}
-SMALL_SIZE, MEDIUM_SIZE, LARGE_SIZE = 12, 20, 25
+                     '2UHFICM2': 2}}
+
+sub_dataframes_2D = [('2HFbasic1', '2HFICM1'),
+                     ('2UHFbasic1_r', '2UHFICM1'),
+                     ('2UHFbasic1_r', '2UHFICM2')]
+sub_dataframes_4D = [('4HFbasic1', '4HFICM1'),
+                     ('4UHFbasic1_r', '4UHFICM1_r', '4UHFICM3_r'),
+                     ('4UHFbasic1_r', '4UHFICM2_r', '4UHFICM4_r')]
+titles = [r'LF $\rightarrow$ HF', r'LF $\rightarrow$ UHF',
+             r'HF $\rightarrow$ UHF']
 
 @click.command()
 @click.option('--show_plots', default=False, is_flag=True,
               help='Show (and don\'t save) plots.')
 @click.option('--dimension', default='2D', type=str,
               help='Chose between 2D or 4D.')
-@click.option('--tolerance', default=0.1, type=float,
+@click.option('--tolerance', default=0.23, type=float,
               help='Tolerance level to plot convergence for.')
 
 
@@ -57,16 +62,33 @@ def main(show_plots, dimension, tolerance):
                             config[exp][0] for exp in config]
     tl_exp_data = load_experiments(tl_experiments)
     bl_exp_data = load_experiments(bl_experiments)
-    df = load_statistics_to_dataframe(bl_exp_data, tl_exp_data)
+    df = load_statistics_to_dataframe(bl_exp_data, tl_exp_data, num_exp=10)
+    df.to_csv('test.csv')
+    plot_convergence_as_boxplot(df, tolerance, dimension, show_plots)
 
 
 def load_experiments(experiments):
+    """Given a list of experiment paths, load the data and return a list of
+    the loaded experiments.
+
+    Parameters
+    ----------
+    experiments : list
+        List of Path objects to experiments
+
+    Returns
+    -------
+    list
+        Loaded experiments.
+    """
     experiments_data = []
     for experiment in experiments:
         exp_data = []
         exp_runs = [exp for exp in experiment.iterdir() if exp.is_file()]
-        exp_runs.sort(key = int)
-        print(exp_runs)
+        # The following sorts the experiments by the experiment number
+        # (e.g. exp_1, exp_2, ...)
+        exp_runs.sort(
+            key=lambda string: int(str(string).split('_')[-1].split('.')[0]))
         for exp in exp_runs:
             exp_data.append(load_json('', exp))
         experiments_data.append(exp_data)
@@ -122,100 +144,71 @@ def correct_type_for_dataframe(result):
     return pd.DataFrame(lists_with_length_one)
 
 
-def plot_tl_convergence(figname, baseline_experiments, tl_experiments,
-                        dimension, tolerance, tol_idx=5, show_plots=False):
-    N = len(tl_experiments)
-    fig, axs = plt.subplots(2, 3, figsize=(9, 6))
+def plot_convergence_as_boxplot(df, tolerance, dimension, show_plots):
+    tolerance_idx = np.argwhere(
+        tolerance == np.array(np.array(CONFIG['tolerances']))).squeeze()
+    plot_df = df[['name', 'iterations_to_gmp_convergence',
+                  'totaltime_to_gmp_convergence', 'initpts']]
+    plot_df['iterations'] = plot_df[
+        'iterations_to_gmp_convergence'].map(lambda x: x[tolerance_idx])
+    plot_df['totaltime'] = plot_df[
+        'totaltime_to_gmp_convergence'].map(lambda x: x[tolerance_idx]/3600)
+    plot_df['tl_initpts'] = plot_df[
+        'initpts'].map(lambda x: x[1])
+    fig, axs = plt.subplots(2, 3, figsize=(6.5, 5), sharex=True)
+    sub_dataframes = sub_dataframes_2D if dimension == '2D' \
+        else sub_dataframes_4D
+    for ax_idx, exp_names in enumerate(sub_dataframes):
+        names = [name for name in exp_names]
+        print(exp_names)
+        if len(names) == 3:
+            experiment_df = plot_df[
+                (plot_df['name'] == names[0]) | (plot_df['name'] == names[1]) |
+                (plot_df['name'] == names[2])]
+        else:
+            experiment_df = plot_df[
+                (plot_df['name'] == names[0]) | (plot_df['name'] == names[1])]
+        sns.boxplot(x='tl_initpts', y='iterations', data=experiment_df,
+                    ax=axs[0, ax_idx], width=0.75, palette="Set2")
+        sns.boxplot(x='tl_initpts', y='totaltime', data=experiment_df,
+                    ax=axs[1, ax_idx], width=0.75, palette="Set2")
+        sns.stripplot(x='tl_initpts', y='iterations', data=experiment_df,
+                    ax=axs[0, ax_idx], dodge=True, marker='o', size=4,
+                    color='black', jitter=True, alpha=.5)
+        sns.stripplot(x='tl_initpts', y='totaltime', data=experiment_df,
+                    ax=axs[1, ax_idx], dodge=True, marker='o', size=4,
+                    color='black', jitter=True, alpha=.5)
 
-    linear_reg_data = {}
-    for exp_idx in range(N):
-        bl_iterations, bl_times = [], []        # bl : baseline
-        tl_iterations, tl_times = [], []        # tl : transfer_learning
-        baseline_data = baseline_experiments[exp_idx]
-        tl_data = tl_experiments[exp_idx]
-        max_iterations, max_time = 0, 0         # used to scale axes
-        idx = None
-        for data_idx, (bl, tl) in enumerate(zip(baseline_data, tl_data)):
-            # I accidentally did 30 experiments for the LF->HF experiments,
-            # but as it turns out, 10 runs gives the same mean statistics,
-            # so it's sufficient to plot only 10 runs (also plotting
-            # all 30 runs looks messy)
-            if data_idx > 10:
-                break
-            name = tl['name']
-            idx = PLOT_IDX_DICT[dimension][name]
-            bl_initpts, tl_initpts = bl['initpts'][1], tl['initpts'][1]
-            bl_conv, tl_conv = bl['iterations_to_gmp_convergence'][tol_idx], \
-                tl['iterations_to_gmp_convergence'][tol_idx]
-            bl_conv_time, tl_conv_time = bl['totaltime_to_gmp_convergence'][tol_idx], \
-                tl['totaltime_to_gmp_convergence'][tol_idx]
-            bl_conv_time /= 3600
-            bl_iterations.append(bl_conv)
-            bl_times.append(bl_conv_time)
-            if exp_idx < 3:
-                axs[0, idx].scatter(bl_initpts, bl_conv, **SCATTER_DICT)
-                axs[1, idx].scatter(bl_initpts, bl_conv_time, **SCATTER_DICT)
-            if tl_conv is None or tl_conv_time is None:
-                continue
-            tl_conv_time /= 3600
-            tl_iterations.append(tl_conv)
-            tl_times.append(tl_conv_time)
-            max_iterations = max(max_iterations, bl_conv, tl_conv)
-            max_time = max(max_time, bl_conv_time, tl_conv_time)
-            axs[0, idx].scatter(tl_initpts, tl_conv, **SCATTER_DICT)
-            axs[1, idx].scatter(tl_initpts, tl_conv_time, **SCATTER_DICT)
-        if exp_idx < 3:
-            axs[0, idx].scatter(bl_initpts, np.mean(bl_iterations),
-                                    **MEANS_DICT)
-            axs[0, idx].text(0.05*tl_initpts, 1.02*np.mean(bl_iterations),
-                             f'{int(np.mean(bl_iterations))}', c='r')
-            axs[1, idx].scatter(bl_initpts, np.mean(bl_times),
-                                    **MEANS_DICT)
-            axs[1, idx].text(0.05*tl_initpts, 1.02*np.mean(bl_times),
-                             f'{round(np.mean(bl_times), 1)}', c='r')
-        axs[0, idx].scatter(tl_initpts, np.mean(tl_iterations),
-                                **MEANS_DICT)
-        axs[0, idx].text(0.78*tl_initpts, 1.02*np.mean(tl_iterations),
-                         f'{int(np.mean(tl_iterations))}', c='r')
-        axs[1, idx].scatter(tl_initpts, np.mean(tl_times), **MEANS_DICT)
-        axs[1, idx].text(0.78*tl_initpts, 1.04*np.mean(tl_times),
-                         f'{round(np.mean(tl_times), 2)}', c='r')
-        setup = TITLE_DICT[dimension][name]
-        if setup not in linear_reg_data:
-            linear_reg_data[setup] = np.array([]).reshape(0, 2)
-
-        tmp_bl = np.array([[bl_initpts, bl_time] for bl_time in bl_times])
-        tmp_tl = np.array([[tl_initpts, tl_time] for tl_time in tl_times])
-        tmp = np.vstack((tmp_bl, tmp_tl))
-        linear_reg_data[setup] = np.vstack((linear_reg_data[setup], tmp))
-        axs[0, idx].set_ylim([0, max_iterations+0.1*max_iterations])
-        axs[1, idx].set_ylim([0, max_time+0.1*max_time])
-        axs[0, idx].set_title(f'{TITLE_DICT[dimension][name]}',
-                    fontsize=SMALL_SIZE)
-        axs[0, idx].set_xticks([])
-    for setup_idx, setup in enumerate(linear_reg_data):
-        linear_reg_data[setup] = np.unique(linear_reg_data[setup], axis=0)
-        x, y = linear_reg_data[setup][:, 0], linear_reg_data[setup][:, 1]
-        res = stats.linregress(x, y)
-        axs[1, setup_idx].plot(x, res.intercept + res.slope *x,
-                               color=RED, linestyle='dashed')
-
-    handles, labels = plt.gca().get_legend_handles_labels()
-    by_label = dict(zip(labels, handles))
-    axs[0, 0].legend(by_label.values(), by_label.keys(), fontsize=12,
-               loc='upper right')
-    axs[0, 0].set_ylabel('BO iterations', fontsize=SMALL_SIZE)
-    axs[1,0].set_ylabel('CPU time [h]', fontsize=SMALL_SIZE)
-    for ax in axs[1, :]:
-        ax.set_xlabel('secondary initpoints', fontsize=SMALL_SIZE)
-    fig.suptitle(f'{dimension} TL experiments (tolerance: {tolerance} kcal/mol)',
-                 fontsize=MEDIUM_SIZE)
-    plt.tight_layout()
-    if not show_plots:
-        plt.savefig(FIGS_DIR.joinpath(figname), dpi=300)
-    else:
+    for idx in range(3):
+        axs[0, idx].set_xlabel('')
+        axs[0, idx].set_ylabel('')
+        axs[1, idx].set_xlabel('Number of lower \nfidelity samples')
+        axs[1, idx].set_ylabel('')
+        if dimension == '2D':
+            axs[0, idx].set_ylim(0, 35)
+            axs[0, idx].set_title(titles[idx])
+        else:
+            axs[0, idx].set_ylim(0, 200)
+            axs[0, idx].set_title(titles[idx])
+    if dimension == '2D':
+        axs[1, 0].set_ylim(0, 0.35)
+        axs[1, 1].set_ylim(0, 100)
+        axs[1, 2].set_ylim(0, 100)
+    elif dimension == '4D':
+        axs[0, 1].set_ylim(0, 120)
+        axs[0, 2].set_ylim(0, 120)
+        axs[1, 0].set_ylim(0, 2.5)
+        axs[1, 1].set_ylim(0, 350)
+        axs[1, 2].set_ylim(0, 350)
+    axs[0, 0].set_ylabel('BO Iterations')
+    axs[1, 0].set_ylabel('CPU time [h]')
+    fig.suptitle(
+        f'{dimension} Transfer Learning convergence results', fontsize=16)
+    fig.tight_layout()
+    if show_plots:
         plt.show()
-    plt.close()
+    else:
+        plt.savefig(f'results/figs/transfer_learning_boxplots_{dimension}.pdf')
 
 
 if __name__ == '__main__':
