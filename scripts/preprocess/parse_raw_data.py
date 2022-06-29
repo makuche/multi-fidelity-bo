@@ -9,13 +9,13 @@ from pathlib import Path
 # Add path to use read_write.py
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from read_write import load_yaml, load_json, save_json
+from src.read_write import load_yaml, load_json, save_json
 
 
 # folder locations for raw and processed data
 THESIS_DIR = Path(__file__).resolve().parent.parent.parent
-RAW_DATA_DIR = THESIS_DIR / 'data' / 'raw'
-PROCESSED_DATA_DIR = THESIS_DIR / 'data' / 'processed'
+RAW_DATA_DIR = THESIS_DIR / 'data/transfer_learning' / 'raw'
+PROCESSED_DATA_DIR = THESIS_DIR / 'data/transfer_learning' / 'processed'
 # CONFIG contains experiment names and truemin sources
 CONFIG = load_yaml(THESIS_DIR.joinpath('scripts'), '/config.yaml')
 
