@@ -9,7 +9,7 @@ from src.read_write import load_yaml, load_json
 
 THESIS_DIR = Path(__file__).resolve().parent.parent.parent
 FIGS_DIR = THESIS_DIR / 'results/figs'
-CONFIG = load_yaml(THESIS_DIR / 'scripts', '/config.yaml')
+CONFIG = load_yaml(THESIS_DIR / 'scripts', '/config_tl.yaml')
 #print(CONFIG["tolerances"])
 #TOL_IDX = 3         # 5 : 0.1 kcal/mol, 3 : 0.5 kcal/mol
 BLUE, RED = '#000082', '#FE0000'

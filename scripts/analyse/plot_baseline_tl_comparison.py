@@ -12,7 +12,7 @@ FIGS_DIR = THESIS_DIR / 'results/figs'
 PROCESSED_DIR = THESIS_DIR / 'data/processed'
 SCRIPTS_DIR = THESIS_DIR / 'scripts'
 
-tolerances = np.array(load_yaml(SCRIPTS_DIR, '/config.yaml')['tolerances'])
+tolerances = np.array(load_yaml(SCRIPTS_DIR, '/config_tl.yaml')['tolerances'])
 TOLERANCE = tolerances[5]  # kcal/mol
 TOLERANCE_IDX = np.argwhere(tolerances == TOLERANCE).squeeze()
 AXIS_FONTSIZE = 15

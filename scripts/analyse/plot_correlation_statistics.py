@@ -20,7 +20,7 @@ plt.rc('figure', titlesize=LARGE_SIZE)  # fontsize of the figure title
 
 THESIS_DIR = Path(__file__).resolve().parent.parent.parent
 FIGS_DIR = THESIS_DIR / 'results/figs/'
-CONFIG = load_yaml(THESIS_DIR.joinpath('scripts'), '/config.yaml')
+CONFIG = load_yaml(THESIS_DIR.joinpath('scripts'), '/config_tl.yaml')
 # cyan: #3EE1D1, orange: #FF8C00
 # blue: #000082, red: #FE0000
 SCATTER_DICT_2D = {'marker': 'x', 'color': '#000082', 'alpha': 1}

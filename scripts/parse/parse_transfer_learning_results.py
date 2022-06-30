@@ -1,5 +1,5 @@
 """
-Creates pandas dataframe from TL experiments declared in 'config.yaml'.
+Creates pandas dataframe from TL experiments declared in 'config_tl.yaml'.
 Saves the data frame as csv file.
 
 Experiment name | initpts | dimension | iterations (0.1, 0.5, 1.0, 5.0 kcal/mol) | totaltime (0.1, 0.5, 1.0, 5.0 kcal/mol)
@@ -17,7 +17,7 @@ from src.read_write import load_yaml, load_json
 THESIS_DIR = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = THESIS_DIR / 'data/parsed'
 # Config has (experiment,baseline) pairs
-CONFIG = load_yaml(THESIS_DIR / 'scripts', '/config.yaml')
+CONFIG = load_yaml(THESIS_DIR / 'scripts', '/config_tl.yaml')
 TOLERANCES = CONFIG['tolerances']
 names = {
     '2HFbasic1': 'HF',

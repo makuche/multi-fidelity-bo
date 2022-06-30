@@ -1,6 +1,7 @@
 from posixpath import split
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.transforms as mtransforms
 plt.rcParams.update({"text.usetex": True, "font.size": 12})  # Tex rendering
 import seaborn as sns
 import pandas as pd
@@ -14,7 +15,7 @@ from src.read_write import load_yaml, load_json
 
 THESIS_DIR = Path(__file__).resolve().parent.parent.parent
 FIGS_DIR = THESIS_DIR / 'results/figs'
-CONFIG = load_yaml(THESIS_DIR / 'scripts', '/config.yaml')
+CONFIG = load_yaml(THESIS_DIR / 'scripts', '/config_tl.yaml')
 
 TITLE_DICT = {'4D': {'4HFICM1': 'LF ➞ HF',
                      '4UHFICM1_r': 'LF ➞ UHF',
@@ -62,7 +63,7 @@ def main(show_plots, dimension, tolerance):
                             config[exp][0] for exp in config]
     tl_exp_data = load_experiments(tl_experiments)
     bl_exp_data = load_experiments(bl_experiments)
-    df = load_statistics_to_dataframe(bl_exp_data, tl_exp_data, num_exp=10)
+    df = load_statistics_to_dataframe(bl_exp_data, tl_exp_data, num_exp=5)
     df.to_csv('test.csv')
     plot_convergence_as_boxplot(df, tolerance, dimension, show_plots)
 
@@ -160,7 +161,6 @@ def plot_convergence_as_boxplot(df, tolerance, dimension, show_plots):
         else sub_dataframes_4D
     for ax_idx, exp_names in enumerate(sub_dataframes):
         names = [name for name in exp_names]
-        print(exp_names)
         if len(names) == 3:
             experiment_df = plot_df[
                 (plot_df['name'] == names[0]) | (plot_df['name'] == names[1]) |
@@ -172,14 +172,20 @@ def plot_convergence_as_boxplot(df, tolerance, dimension, show_plots):
                     ax=axs[0, ax_idx], width=0.75, palette="Set2")
         sns.boxplot(x='tl_initpts', y='totaltime', data=experiment_df,
                     ax=axs[1, ax_idx], width=0.75, palette="Set2")
-        sns.stripplot(x='tl_initpts', y='iterations', data=experiment_df,
-                    ax=axs[0, ax_idx], dodge=True, marker='o', size=4,
-                    color='black', jitter=True, alpha=.5)
-        sns.stripplot(x='tl_initpts', y='totaltime', data=experiment_df,
-                    ax=axs[1, ax_idx], dodge=True, marker='o', size=4,
-                    color='black', jitter=True, alpha=.5)
-
-    for idx in range(3):
+        # sns.stripplot(x='tl_initpts', y='iterations', data=experiment_df,
+        #             ax=axs[0, ax_idx], dodge=True, marker='o', size=4,
+        #             color='black', jitter=True, alpha=.5)
+        # sns.stripplot(x='tl_initpts', y='totaltime', data=experiment_df,
+        #             ax=axs[1, ax_idx], dodge=True, marker='o', size=4,
+        #             color='black', jitter=True, alpha=.5)
+    trans = mtransforms.ScaledTranslation(10/72, -5/72, fig.dpi_scale_trans)
+    for idx, labels in enumerate([('a)', 'b)'), ('c)', 'd)'), ('e)', 'f)')]):
+        axs[0, idx].text(0.0, 1.0, labels[0],
+                         transform=axs[0, idx].transAxes + trans, fontsize=12,
+                         verticalalignment='top')
+        axs[1, idx].text(0.0, 1.0, labels[1],
+                         transform=axs[1, idx].transAxes + trans, fontsize=12,
+                         verticalalignment='top')
         axs[0, idx].set_xlabel('')
         axs[0, idx].set_ylabel('')
         axs[1, idx].set_xlabel('Number of lower \nfidelity samples')
@@ -192,14 +198,14 @@ def plot_convergence_as_boxplot(df, tolerance, dimension, show_plots):
             axs[0, idx].set_title(titles[idx])
     if dimension == '2D':
         axs[1, 0].set_ylim(0, 0.35)
-        axs[1, 1].set_ylim(0, 100)
-        axs[1, 2].set_ylim(0, 100)
+        axs[1, 1].set_ylim(0, 120)
+        axs[1, 2].set_ylim(0, 120)
     elif dimension == '4D':
-        axs[0, 1].set_ylim(0, 120)
-        axs[0, 2].set_ylim(0, 120)
+        axs[0, 1].set_ylim(0, 130)
+        axs[0, 2].set_ylim(0, 130)
         axs[1, 0].set_ylim(0, 2.5)
-        axs[1, 1].set_ylim(0, 350)
-        axs[1, 2].set_ylim(0, 350)
+        axs[1, 1].set_ylim(0, 390)
+        axs[1, 2].set_ylim(0, 390)
     axs[0, 0].set_ylabel('BO Iterations')
     axs[1, 0].set_ylabel('CPU time [h]')
     fig.suptitle(
