@@ -315,6 +315,7 @@ def read_and_preprocess_boss_output(path, file_name, exp_name):
                'iter_times': None,
                'total_time': None,
                'run_completed': [False],
+               'sample_indices': []
                }
     xy = []
     acq_times = []
@@ -423,6 +424,26 @@ def read_and_preprocess_boss_output(path, file_name, exp_name):
         # add 0, since no secondary task initpts used
         results['initpts'].append(0)
 
+    # Get sample indices from the rst file
+    rst_file_path = ''.join((path, file_name[:-4], '.rst'))
+    with open(rst_file_path, "r") as f:
+        start_reading_indices = False
+        for line in f:
+            if line.startswith("acqcost"):
+                if "acqcost_as_timing" in line:
+                    continue
+                if "None" in line:
+                    continue
+                results["acqcost"] = parse_values(
+                    line, typecast=float, sep=" ", idx=1)
+            if line.startswith("RESULTS"):
+                start_reading_indices = True
+                continue
+            if start_reading_indices:
+                results["sample_indices"].append(
+                    int(float(line.split()[results["dim"]])))
+        if 'ICM' not in file_name:
+            results['sample_indices'] = [0] * len(results['sample_indices'])
     return results
 
 
