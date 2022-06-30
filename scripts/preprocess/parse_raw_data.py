@@ -5,28 +5,32 @@ import os
 import shutil
 import preprocess
 import sys
+import click
 from pathlib import Path
 # Add path to use read_write.py
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.read_write import load_yaml, load_json, save_json
 
-
 # folder locations for raw and processed data
 THESIS_DIR = Path(__file__).resolve().parent.parent.parent
-RAW_DATA_DIR = THESIS_DIR / 'data/transfer_learning' / 'raw'
-PROCESSED_DATA_DIR = THESIS_DIR / 'data/transfer_learning' / 'processed'
-# CONFIG contains experiment names and truemin sources
-CONFIG = load_yaml(THESIS_DIR.joinpath('scripts'), '/config.yaml')
 
 verbose = False
 
-
-def main():
+@click.command()
+@click.option('--setup', default='transfer_learning',
+              help="Chose either 'transfer_learning' or 'multi_task_learning.")
+def main(setup):
+    RAW_DATA_DIR = THESIS_DIR / f'data/{setup}' / 'raw'
+    PROCESSED_DATA_DIR = THESIS_DIR / f'data/{setup}' / 'processed'
     rm_tree(PROCESSED_DATA_DIR)     # removing existing directory if it exists
     PROCESSED_DATA_DIR.mkdir()
-    parsed_data_dict = create_parsed_dict(RAW_DATA_DIR)
+    parsed_data_dict = create_parsed_dict(RAW_DATA_DIR, PROCESSED_DATA_DIR)
     all_experiments = list(parsed_data_dict.keys())
+    # CONFIG contains experiment names and truemin sources
+    config_tl = load_yaml(THESIS_DIR.joinpath('scripts'), '/config_tl.yaml')
+    config_mt = load_yaml(THESIS_DIR.joinpath('scripts'), '/config_mt.yaml')
+    CONFIG = config_tl if setup == 'transfer_learning' else config_mt
 
     for exp in all_experiments:
         exp_path = RAW_DATA_DIR.joinpath(exp)
@@ -35,7 +39,7 @@ def main():
         exp_batch.sort()
         for exp_run_idx, exp_run in enumerate(exp_batch):
             subruns = [x for x in exp_run.iterdir() if
-                       x.is_dir() and 'subrun' in str(x)]
+                       x.is_dir() and ('_r' in str(x.parent.parent))]
             if len(subruns) == 0:
                 file_path = str(exp_run.joinpath('boss.out'))
                 json_name = f'exp_{exp_run_idx+1}.json'
@@ -53,7 +57,7 @@ def main():
                     json_path = str(PROCESSED_DATA_DIR.joinpath(exp,
                                                                 json_name))
                     parse(file_path, exp, json_path)
-
+    #exit()
     # Once all the raw data is processed, substract the truemin
     # from the data. This needs to be done in another loop, since
     # the truemin comes from different sources
@@ -61,7 +65,8 @@ def main():
     # First, loop over the truemin source baseline experiments
     baselines = CONFIG['baselines']
     tolerances = CONFIG['tolerances']
-    tl_experiments = CONFIG['TL_experiments']
+    multi_task_experiments = CONFIG['experiments']
+    #tl_experiments = CONFIG['TL_experiments']
     for exp in baselines:
         best_acqs = []
         sub_exp_paths = [
@@ -123,14 +128,13 @@ def main():
                     shutil.move(os.path.join(subrun_dir.parent, subrun),
                                 subrun_dir)
 
-    # BUG : Adjust this for the subrun structure, once data is available
-    for exp in tl_experiments:
+    for exp in multi_task_experiments:
         truemin, init_times = [], []
         # Get data from all used baselines for initialization
-        for i in range(len(tl_experiments[exp])):
+        for i in range(len(multi_task_experiments[exp])):
             init_time = []
-            baseline_exp = tl_experiments[exp][i][0]
-            baseline_init_strategy = tl_experiments[exp][i][1]
+            baseline_exp = multi_task_experiments[exp][i][0]
+            baseline_init_strategy = multi_task_experiments[exp][i][1]
             baseline_file = parsed_data_dict[baseline_exp][0]
             data = load_json(
                 str(PROCESSED_DATA_DIR) +
@@ -169,9 +173,6 @@ def main():
                     initial_data_cost.append(init_time[(tl_exp_idx
                                                         % N_baselines)])
             filename = parsed_data_dict[exp][tl_exp_idx]
-            # TODO : Check if this works as intended
-            # preprocess.preprocess on subrun_1 WITH initial datacost,
-            # on the other runs WITHOUT initial datacost
             if '_r' not in exp:
                 data = load_json(str(PROCESSED_DATA_DIR) +
                                  f'/{exp}', f'/{filename}.json')
@@ -180,8 +181,6 @@ def main():
                                              initial_data_cost)
                 save_json(data, str(PROCESSED_DATA_DIR) + f'/{exp}',
                           f'/{filename}.json')
-            # TODO : Go through the following in detail again! It's
-            # likely that this isn't working as intended yet
             else:
                 data_paths = [
                     path for path in PROCESSED_DATA_DIR.joinpath(exp).iterdir()
@@ -196,8 +195,7 @@ def main():
                               f'/{filename}.json')
 
     # Merge data from the transfer learning subruns
-    # TODO : Check if this works as intended, once data is available
-    for exp in tl_experiments:
+    for exp in multi_task_experiments:
         if '_r' in exp:
             all_subrun_paths = sorted(
                 [path for path in
@@ -226,7 +224,7 @@ def rm_tree(pth: Path):
         return
 
 
-def parse_values(line, typecast=int, sep=None, idx=1):
+def parse_values(line, typecast=int, sep=None, idx=1, cut_idx=None):
     """Returns a list of parsed values from a line in the output file.
 
     Args:
@@ -242,10 +240,10 @@ def parse_values(line, typecast=int, sep=None, idx=1):
         'correct' format
     """
     # .strip removes spaces from the beginning and end of the string
-    return [typecast(val.strip(sep)) for val in line.split(sep)[idx:]]
+    return [typecast(val.strip(sep)) for val in line.split(sep)[idx:cut_idx]]
 
 
-def create_parsed_dict(data_folder):
+def create_parsed_dict(data_folder, processed_data_dir):
     """Create a dict, listing all the runs for an experiment.
 
     Args:
@@ -266,10 +264,7 @@ def create_parsed_dict(data_folder):
             exp_runs = sorted(exp_runs, key=lambda run:
                               int(run.split(sep='_')[-1]))
             data_dict[exp_name] = exp_runs
-    mt_keys = [key for key in data_dict if 'MT' in key]
-    for key in mt_keys:
-        del data_dict[key]
-    save_json(data_dict, PROCESSED_DATA_DIR, '/parsed_dict.json')
+    save_json(data_dict, processed_data_dir, '/parsed_dict.json')
     return data_dict
 
 
@@ -329,11 +324,14 @@ def read_and_preprocess_boss_output(path, file_name, exp_name):
     gp_hyperparam = []
     iter_times = []
     total_time = []
+    boss_version = None
     with open(''.join((path, file_name)), 'r') as file:
         lines = file.readlines()
         results['header'] = lines[0:100]
         for i in range(len(lines)):
             line = lines[i]
+            if 'Version' in line:
+                boss_version = parse_values(line, typecast=str)[0]
             if 'Data point added to dataset' in line:
                 line = lines[i+1]
                 xy.append(parse_values(line, typecast=float, idx=0))
@@ -344,8 +342,6 @@ def read_and_preprocess_boss_output(path, file_name, exp_name):
                 line = lines[i+1]
                 global_min_prediction.append(parse_values(line, typecast=float,
                                                           idx=0))
-            # TODO : Check what the following parses for (maybe something in
-            # BOSS_MT)
             elif 'Global minimum convergence' in line:
                 line = lines[i+1]
                 global_min_prediction_convergence.append(
@@ -365,10 +361,23 @@ def read_and_preprocess_boss_output(path, file_name, exp_name):
                 total_time.append(parse_values(line, typecast=float, idx=7)[0])
             elif 'Objective function evaluated' in line:
                 acq_times.append(parse_values(line, typecast=float, idx=6)[0])
+
+            # In old BOSS: output for initpts and iterpts in different lines,
+            # e.g. 'initpts     2 50
+            #       iterpts     100'
+            # In new BOSS: output for initpts and iterpts in same line,
+            # e.g. 'initpts   4    iterpts   150'. Note that initpts 4
+            # means 2 initpts per task.
             elif 'initpts' in line and results['initpts'] is None:
-                results['initpts'] = parse_values(line)
-            elif 'iterpts' in line and results['iterpts'] is None:
-                results['iterpts'] = parse_values(line)
+                if boss_version == '1.5':
+                    results['initpts'] = parse_values(line, cut_idx=-2)
+                    results['iterpts'] = parse_values(line, idx=3)
+                elif (boss_version == '0.9.15') or (boss_version == '0.9.17'):
+                    next_line = lines[i+1]
+                    results['initpts'] = parse_values(line)
+                    results['iterpts'] = parse_values(next_line)
+                else:
+                    Exception(f'Unsupported boss version: {boss_version}')
             elif 'num_tasks' in line:
                 results['num_tasks'] = parse_values(line)[0]
             elif 'bounds' in line and results['bounds'] is None:
@@ -410,7 +419,6 @@ def read_and_preprocess_boss_output(path, file_name, exp_name):
     results['GP_hyperparam'] = gp_hyperparam
     results['iter_times'] = iter_times
     results['total_time'] = total_time
-
     if len(results['initpts']) == 1:
         # add 0, since no secondary task initpts used
         results['initpts'].append(0)
