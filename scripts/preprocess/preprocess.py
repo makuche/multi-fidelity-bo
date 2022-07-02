@@ -63,8 +63,7 @@ def add_init_acq_times(data, init_data_cost):
         accounted_initpts += initpts
 
 
-def calculate_convergence_times(data, idx, measure='gmp',
-                                check_also_xhat=False):
+def calculate_convergence_times(data, idx, measure='gmp'):
     """Calculates the convergence points/times of a quantity for given
     tolerances.
 
@@ -86,61 +85,23 @@ def calculate_convergence_times(data, idx, measure='gmp',
     # is used at all -> If not, delete it
     data[f'observations_to_{measure}_convergence'] = []     # BO + init points
 
-    if not check_also_xhat:
-        for tolerance in data['tolerance_levels']:
-            i = 0
-            for value in values:
-                if abs(value) > tolerance:
-                    break
-                i += 1
-            if i == 0:
-                iterations = None
-                totaltime = None
-                observations = None
-            else:
-                iterations = len(values) - i
-                totaltime = data['total_time'][-i]
-                observations = len(data['xy']) - i
-            data[f'iterations_to_{measure}_convergence'].append(iterations)
-            data[f'totaltime_to_{measure}_convergence'].append(totaltime)
-            data[f'observations_to_{measure}_convergence'].append(observations)
-    else:
-        def point_within_hypercube(xhat_coords, cube_center, sidelength=20):
-            """
-            Checks if a point is within a N dimensional
-            hypercube with certain sidelength. For each dimension d, it is
-            checked that |xhat[d] - cube_center[d]| < sidelength.
-
-            This can be used to check also the xhat from the predicted
-            global minimum, to see if the global structure search
-            succeeded.
-            """
-            dimension_convered = []
-            for coord, cube_coord in zip(xhat_coords, cube_center):
-                dimension_convered.append(
-                    np.abs(coord - cube_coord) < sidelength)
-            return np.all(dimension_convered)
-        predict_xhats = np.atleast_2d(data[measure])[:, 0:idx][::-1]
-        true_xhat = np.array(data['truemin'])[0][:-1]
-        predict_yhats = np.atleast_2d(data[measure])[:, idx][::-1]
-        for tolerance in data['tolerance_levels']:
-            i = 0
-            for predict_yhat, predict_xhat in zip(predict_yhats, predict_xhats):
-                if abs(predict_yhat) > tolerance or not\
-                   point_within_hypercube(predict_xhat, true_xhat):
-                    break
-                i += 1
-            if i == 0:
-                iterations = None
-                totaltime = None
-                observations = None
-            else:
-                iterations = len(values) - i
-                totaltime = data['total_time'][-i]
-                observations = len(data['xy']) - i
-            data[f'iterations_to_{measure}_convergence'].append(iterations)
-            data[f'totaltime_to_{measure}_convergence'].append(totaltime)
-            data[f'observations_to_{measure}_convergence'].append(observations)
+    for tolerance in data['tolerance_levels']:
+        i = 0
+        for value in values:
+            if abs(value) > tolerance:
+                break
+            i += 1
+        if i == 0:
+            iterations = None
+            totaltime = None
+            observations = None
+        else:
+            iterations = len(values) - i
+            totaltime = data['total_time'][-i]
+            observations = len(data['xy']) - i
+        data[f'iterations_to_{measure}_convergence'].append(iterations)
+        data[f'totaltime_to_{measure}_convergence'].append(totaltime)
+        data[f'observations_to_{measure}_convergence'].append(observations)
 
 
 def calculate_B(data):
@@ -189,3 +150,13 @@ def preprocess(data, tolerance_levels=[0], init_data_cost=None):
     calculate_B(data)
 
     return data
+
+
+def calc_cumulative_num_highest_fidelity_samples(data):
+    flag_highest_fidelity_samples = []
+    for sample_idx in data['sample_indices']:
+        if sample_idx == 0:
+            flag_highest_fidelity_samples.append(1)
+        else:
+            flag_highest_fidelity_samples.append(0)
+    return np.cumsum(flag_highest_fidelity_samples).tolist()
