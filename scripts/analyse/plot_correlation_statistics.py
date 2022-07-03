@@ -1,15 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
+plt.rcParams.update({"text.usetex": True, "font.size": 12})  # Tex rendering
 import sys
-import argparse
+import click
 from pathlib import Path
 # Add path to use read_write.py
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from read_write import load_yaml, load_json, save_json
+from src.read_write import load_yaml, load_json, save_json
 
 SMALL_SIZE = 12
-MEDIUM_SIZE = 20
-LARGE_SIZE = 30
+MEDIUM_SIZE = 12
+LARGE_SIZE = 12
 plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
 plt.rc('axes', titlesize=LARGE_SIZE)     # fontsize of the axes title
 plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
@@ -23,33 +24,28 @@ FIGS_DIR = THESIS_DIR / 'results/figs/'
 CONFIG = load_yaml(THESIS_DIR.joinpath('scripts'), '/config_tl.yaml')
 # cyan: #3EE1D1, orange: #FF8C00
 # blue: #000082, red: #FE0000
-SCATTER_DICT_2D = {'marker': 'x', 'color': '#000082', 'alpha': 1}
-SCATTER_DICT_4D = {'marker': 'x', 'color': '#FE0000', 'alpha': 1}
+SCATTER_DICT_2D = {'marker': 'x', 'color': '#000082', 'alpha': 1, 's': 10}
+SCATTER_DICT_4D = {'marker': 'x', 'color': '#FE0000', 'alpha': 1, 's': 10}
 NAMES = ['LF', 'HF', 'UHF']
 COLORS = ['blue', 'orange']
 
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--show_plots',
-                        action='store_true',
-                        dest='show_plots',
-                        help="Show (and don't save) plots")
-    args = parser.parse_args()
-    exp_list_2D = [THESIS_DIR / 'data' / 'processed' /
+@click.command()
+@click.option('--show_plots', is_flag=True, default=False)
+def main(show_plots):
+    exp_list_2D = [THESIS_DIR / 'data/multi_task_learning' / 'processed' /
                    exp for exp in CONFIG['correlation_data']['2D']]
-    exp_list_4D = [THESIS_DIR / 'data' / 'processed' /
+    exp_list_4D = [THESIS_DIR / 'data/multi_task_learning' / 'processed' /
                    exp for exp in CONFIG['correlation_data']['4D']]
     y_values_2D, acq_times = load_2D_y_values_and_acq_times(exp_list_2D)
     y_values_4D = load_4D_y_values(exp_list_4D)
-    plot_acq_times_comparison(acq_times, show_plots=args.show_plots)
+    plot_acq_times_comparison(acq_times, show_plots=show_plots)
     # plot_acq_times_histograms(acq_times, NAMES, show_plots=args.show_plots)
     for y_values in [y_values_2D, y_values_4D]:
         print_correlation_matrix(y_values)
     #    print_and_plot_summary_statistics(y_values,
     #                                      show_plots=args.show_plots)
-    #plot_correlation([y_values_2D, y_values_4D], show_plots=args.show_plots)
-    plot_correlation_coefficient([y_values_2D, y_values_4D])
+    plot_correlation([y_values_2D, y_values_4D], show_plots=show_plots)
+    # plot_correlation_coefficient([y_values_2D, y_values_4D], show_plots)
 
 
 def load_2D_y_values_and_acq_times(exp_list, num_points=100):
@@ -110,7 +106,7 @@ def load_4D_y_values(exp_list, num_points=200):
 def plot_correlation(y_values, figname='correlation.pdf',
                                     show_plots=False):
     N = y_values[0].shape[0]
-    fig, axs = plt.subplots(1, N, figsize=(4*N, 4), constrained_layout=True)
+    fig, axs = plt.subplots(1, N, figsize=(6.5, 2.5), constrained_layout=True)
     for values_idx, values in enumerate(y_values):
         i = values_idx
         SCATTER_STYLE = SCATTER_DICT_2D if values_idx == 0 else SCATTER_DICT_4D
@@ -121,7 +117,7 @@ def plot_correlation(y_values, figname='correlation.pdf',
                        **SCATTER_STYLE, zorder=1-i)
         axs[2].scatter(values[1, :], values[2, :],
                        **SCATTER_STYLE, zorder=1-i)
-    axs[0].legend(fontsize=18)
+    axs[0].legend(fontsize=12)
     axs[0].set_xlabel('LF')
     axs[0].set_ylabel('HF')
     axs[1].set_xlabel('LF')
@@ -148,12 +144,12 @@ def plot_acq_times_comparison(acq_times, figname='acquisition_times.pdf',
     N = acq_times.shape[0]
 
     if N == 4:
-        font = {'size': 16}
+        font = {'size': 12}
     else:
-        font = {'size': 20}
+        font = {'size': 12}
     plt.rc('font', **font)
 
-    fig, ax = plt.subplots(figsize=(11, 8), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(6.5, 3.5), constrained_layout=True)
     for i in range(N):
         mean = np.mean(acq_times[i,:])/60
         std_dev = np.std(acq_times[i,:])/60
@@ -163,18 +159,19 @@ def plot_acq_times_comparison(acq_times, figname='acquisition_times.pdf',
             str(f'{round(std_dev,2)}')
         print(i, val)
         if i < 2:
-            ax.annotate(val, [i-0.25, mean+0.1*mean])
+            ax.annotate(val, [i-0.25, mean+0.15*mean])
         elif i == 2:
-            ax.annotate(val, [i-0.30, mean+0.1*mean])
+            ax.annotate(val, [i-0.25, mean+0.15*mean])
         else:
-            ax.annotate(val, [i-0.55, mean+0.1*mean])
+            ax.annotate(val, [i-0.35, mean+0.15*mean])
+    ax.set_ylim(0, 4*10**2)
     ax.set_xticks(np.arange(N))
-    NAMES = ['Force fields', 'DFT', 'Quantum chemistry']
+    NAMES = ['Force fields', 'Density functional theory', 'Quantum chemistry']
     ax.set_xticklabels(NAMES[:N])
     # ax.set_xlabel('fidelity')
-    ax.set_ylabel('mean acq. time [min]')
+    ax.set_ylabel('CPU time [min]')
 #    ax.set_ylim(1, 3e4)
-    plt.title(r' Acquisition times in format $\bar{t} \pm \sigma$')
+    plt.title(r'Acquisition times for different simulators')
     if not show_plots:
         plt.savefig(FIGS_DIR / figname, dpi=300)
     else:
