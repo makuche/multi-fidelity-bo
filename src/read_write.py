@@ -1,6 +1,7 @@
 import json
 import yaml
 import pandas as pd
+import numpy as np
 
 
 def load_experiments(experiments):
@@ -36,7 +37,6 @@ def load_statistics_to_dataframe(baseline_experiments, tl_experiments,
     columns = [key for key in tl_experiments[0][0].keys()]
     df = pd.DataFrame(columns=columns)
 
-
     for baseline_experiment in baseline_experiments:
         for baseline_run in baseline_experiment[:num_exp]:
             entry = correct_type_for_dataframe(baseline_run)
@@ -67,6 +67,9 @@ def correct_type_for_dataframe(result):
         Returns dataframe that can be concatenated to a dataframe.
     """
     entries_to_lists, lists_with_length_one = {}, {}
+    if 'cumulative_num_highest_fidelity_samples' not in result.keys():
+        result['cumulative_num_highest_fidelity_samples'] =  \
+            calc_cumulative_num_highest_fidelity_samples(result)
     for key in result:
         if not isinstance(result[key], list):
             entries_to_lists[key] = [result[key]]
@@ -78,6 +81,16 @@ def correct_type_for_dataframe(result):
         else:
             lists_with_length_one[key] = [entries_to_lists[key]]
     return pd.DataFrame(lists_with_length_one)
+
+
+def calc_cumulative_num_highest_fidelity_samples(data):
+    flag_highest_fidelity_samples = []
+    for sample_idx in data['sample_indices']:
+        if sample_idx == 0:
+            flag_highest_fidelity_samples.append(1)
+        else:
+            flag_highest_fidelity_samples.append(0)
+    return np.cumsum(flag_highest_fidelity_samples).tolist()
 
 
 def load_json(path, filename):

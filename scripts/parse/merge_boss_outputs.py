@@ -16,8 +16,6 @@ FOLDERS_TO_IGNORE = ['baselines', 'old', 'template', 'tmp', 'misc']
               help='Experimental setup')
 @click.option('--path', required=True, default=DATA_DIR,
               help='Experimental setup')
-
-
 def main(all_setups, setup, path):
     """Merges the output files of all subruns of a given setup.
     If no setup is given, all setups found in the data directory, that
@@ -34,11 +32,13 @@ def main(all_setups, setup, path):
         raise Exception('Either --all_setups or --setup must be given.')
     if setup is None:
         setups = get_setups()
+    else:
+        setups = [setup]
     for setup in setups:
         print(f"Merging the subrun files from {str(setup).split('/')[-1]}")
         data_dir = Path(path) / setup
         experiments = [exp for exp in data_dir.iterdir() if (exp.is_dir()
-                       and 'template' not in exp.name)]
+                       and 'exp' in exp.name)]
         experiments.sort()
         for exp_path in experiments:
             outfile_text = merge_subrun_output_files(exp_path)
