@@ -61,7 +61,7 @@ def main(show_plots, dimension, tolerance, print_summary):
     bl_exp_data = load_experiments(bl_experiments)
     df = load_statistics_to_dataframe(bl_exp_data, tl_exp_data, num_exp=5)
     plot_convergence_as_boxplot(
-        df, tolerance, dimension, show_plots, print_statistics)
+        df, tolerance, dimension, show_plots, print_summary)
 
 
 def plot_convergence_as_boxplot(df, tolerance, dimension, show_plots,

@@ -19,7 +19,7 @@ verbose = False
 
 @click.command()
 @click.option('--setup', default='transfer_learning',
-              help="Chose either 'transfer_learning' or 'multi_task_learning.")
+    help="Chose either 'transfer_learning' or 'multi_task_learning'.")
 def main(setup):
     RAW_DATA_DIR = THESIS_DIR / f'data/{setup}' / 'raw'
     PROCESSED_DATA_DIR = THESIS_DIR / f'data/{setup}' / 'processed'
@@ -442,8 +442,10 @@ def read_and_preprocess_boss_output(path, file_name, exp_name):
             if start_reading_indices:
                 results["sample_indices"].append(
                     int(float(line.split()[results["dim"]])))
-        if 'ICM' not in file_name:
-            results['sample_indices'] = [0] * len(results['sample_indices'])
+    if ('ICM' not in file_name) or (len(results['sample_indices']) == 0):
+        results['sample_indices'] = [0] * len(results['sample_indices'])
+    results['highest_fidelity_iterations'] = \
+        preprocess.get_highest_fidelity_iterations(results)
     return results
 
 
@@ -479,7 +481,7 @@ def merge_subrun_data(subrun_file_paths, exp_idx):
                                  'bounds', 'dim', 'tasks', 'kernel',
                                  'num_tasks', 'tolerance_levels',
                                  'yrange', 'initpts']
-    to_copy_from_last_subrun = ['xy']
+    to_copy_from_last_subrun = ['xy', 'sample_indices']
     to_stack = ['GP_hyperparam', 'acq_times', 'best_acq', 'gmp_convergence',
                 'run_completed']
     to_stack_and_clean = ['gmp', 'iterpts', 'iter_times',
@@ -620,7 +622,9 @@ def merge_subrun_data(subrun_file_paths, exp_idx):
         if key == 'model_time':
             # This is not used
             pass  # TODO
-
+    if 'basic' in merged_results['name']:
+        merged_results['highest_fidelity_iterations_to_gmp_convergence'] = \
+            merged_results['iterations_to_gmp_convergence']
     json_name = exp_idx
     json_path = str(subrun_file_paths[0].parent) + '/'
     with open(os.path.expanduser(f'{json_path}{json_name}.json'), 'w') \

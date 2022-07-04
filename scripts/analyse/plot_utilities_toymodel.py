@@ -12,14 +12,14 @@ from src.read_toymodel_outputs import OutputFileParser, ParserToDataFrame
 THESIS_FOLDER = Path(__file__).resolve().parent.parent.parent
 FIGS_DIR = THESIS_FOLDER / 'results/figs'
 TOYMODEL_FOLDER = THESIS_FOLDER / 'data/multi_task_learning/toymodel'
-legend_labels = ['Single-task',
-                 'Approach 1',
-                 'Approach 2',
-                 'Approach 3',
-                 'Approach 4',
-                 'Approach 5',
-                 'Approach 6',
-                 'Approach 7']
+legend_labels = ['Single fidelity',
+                 'MFBO Approach 1',
+                 'MFBO Approach 2',
+                 'MFBO Approach 3',
+                 'MFBO Approach 4',
+                 'MFBO Approach 5',
+                 'MFBO Approach 6',
+                 'MFBO Approach 7']
 transfer_learning_results = {'uhf_hf': 6, 'uhf_lf': 17}
 scales = {'uhf_hf': [2, 40], 'uhf_lf': [2, 55]}
 fidelities = 'uhf_hf'
@@ -387,15 +387,11 @@ def plot_cost_to_reach_convergence(plot_settings, folder, show_plots):
     multi_task_plot_df = plot_df[plot_df['strategy'] != 'st'].copy()
     plot_order = ['st'] + [f'strategy{idx}' for idx in strategy_indices]
     ax = sns.boxplot(x='acqfn', y=convergence_metric, hue='strategy',
-                     data=single_task_plot_df, hue_order=plot_order, palette="hls")
+                     data=single_task_plot_df, hue_order=plot_order,
+                     palette="tab10")
     ax = sns.boxplot(x='acqfn', y=convergence_metric, hue='strategy',
-                     data=multi_task_plot_df, hue_order=plot_order, palette="hls")
-    # ax = sns.stripplot(x='acqfn', y=convergence_metric, hue='strategy',
-    #                    dodge=True, marker='o', size=7, color='black', alpha=.5,
-    #                    hue_order=plot_order, data=plot_df, jitter=True)
-    # ax = sns.stripplot(x='acqfn', y=convergence_metric, hue='strategy',
-    #                    dodge=True, marker='o', size=7, color='black', alpha=.5,
-    #                    hue_order=plot_order, data=plot_df, jitter=True)
+                     data=multi_task_plot_df, hue_order=plot_order,
+                     palette="tab10")
     if best_tl_result is not None:
         plt.axhline(best_tl_result, ls='dashed', c='gray', alpha=.5,
                     label='Best Transfer learning strategy')
@@ -403,13 +399,14 @@ def plot_cost_to_reach_convergence(plot_settings, folder, show_plots):
     #handles, labels = handles[:10], labels[:10]
 
     legend_by_label = dict(zip(legend_labels, handles))
-    plt.legend(legend_by_label.values(), legend_by_label.keys(), ncol=2)
-#               bbox_to_anchor=(1.02, 1), loc=2, borderaxespad=0.)
+    plt.legend(legend_by_label.values(), legend_by_label.keys(), ncol=2,
+               fontsize=10)
+    ax.set_ylim(0, 150)
     support_tasks = [task.upper() for task in support_tasks]
     plt.title(f'2D Multi-task convergence results for ' + titles[fidelities])
     if convergence_metric == 'convergence_cost':
         if scale_y_axis:
-            plt.ylim(2*3.5, 120)
+            plt.ylim(2*3.5, 150)
         else:
             plt.ylim(single_task_cost*plot_bounds[0],
                      single_task_cost*plot_bounds[1])

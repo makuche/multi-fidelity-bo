@@ -73,16 +73,12 @@ def calculate_convergence_times(data, idx, measure='gmp'):
         into account for MT runs).
         measure (str, optional): Quantity to calculate convergence measures
         for. Defaults to 'gmp'.
-        check_also_xhat (bool, default=False): Consider also xhat (the
-        search space location) of the GMP as a convergence measure.
     """
     if data[measure] == []:
         return          # This is for interrupted sobol runs (hardcoded fix)
     values = np.atleast_2d(data[measure])[:, idx][::-1]     # note reversion
     data[f'iterations_to_{measure}_convergence'] = []       # BO iterations
     data[f'totaltime_to_{measure}_convergence'] = []        # total runtime
-    # TODO : Check the following, if correctly calculated or if this
-    # is used at all -> If not, delete it
     data[f'observations_to_{measure}_convergence'] = []     # BO + init points
 
     for tolerance in data['tolerance_levels']:
@@ -102,6 +98,25 @@ def calculate_convergence_times(data, idx, measure='gmp'):
         data[f'iterations_to_{measure}_convergence'].append(iterations)
         data[f'totaltime_to_{measure}_convergence'].append(totaltime)
         data[f'observations_to_{measure}_convergence'].append(observations)
+
+    if 'ICM' in data['name']:
+        data[f'highest_fidelity_iterations_to_{measure}_convergence'] = []
+        for tolerance in data['tolerance_levels']:
+            i = 0
+            for value in values:
+                if abs(value) > tolerance:
+                    break
+                i += 1
+            if i == 0:
+                iterations = None
+            else:
+                iterations = data['highest_fidelity_iterations'][-i]
+            data[f'highest_fidelity_iterations_to_{measure}_convergence'].\
+                append(iterations)
+    else:
+        data[f'highest_fidelity_iterations_to_{measure}_convergence'] = \
+            data[f'iterations_to_{measure}_convergence']
+
 
 
 def calculate_B(data):
@@ -145,14 +160,13 @@ def preprocess(data, tolerance_levels=[0], init_data_cost=None):
     # Add offset to the data and add convergence times
     substract_y_offset(data)
     data['tolerance_levels'] = tolerance_levels
-    calculate_convergence_times(data, idx=-2, check_also_xhat=False)
+    calculate_convergence_times(data, idx=-2)
 
     calculate_B(data)
 
     return data
 
-
-def calc_cumulative_num_highest_fidelity_samples(data):
+def get_highest_fidelity_iterations(data):
     flag_highest_fidelity_samples = []
     for sample_idx in data['sample_indices']:
         if sample_idx == 0:
