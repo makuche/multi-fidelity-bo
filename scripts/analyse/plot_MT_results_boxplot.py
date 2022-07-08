@@ -5,7 +5,8 @@ from posixpath import split
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
-plt.rcParams.update({"text.usetex": True, "font.size": 12})  # Tex rendering
+plt.rc('font', **{ 'family': 'serif', 'size': 12, })
+plt.rc('text', **{ 'usetex': True, 'latex.preamble': r""" \usepackage{physics} \usepackage{siunitx} """ })
 import seaborn as sns
 import pandas as pd
 import click
@@ -87,6 +88,8 @@ def plot_convergence_as_boxplot(
         (plot_df['name'].str.contains('ICM2'))]
     strategies = ['Baseline', r'LF $\rightarrow$ UHF',
                   r'HF $\rightarrow$ UHF']
+    if highest_fidelity == 'hf':
+        strategies[1] = r'LF $\rightarrow$ HF'
     conditions_approach = [
         (plot_df['name'].str.contains('basic')),
         (plot_df['name'].str.contains('ELCB1')),
@@ -107,6 +110,17 @@ def plot_convergence_as_boxplot(
                 whis=[0.25, 0.75], data=plot_df, palette="tab10", ax=axs[0])
     sns.boxplot(x='Setup', y='CPU time [h]', hue='Strategy', whis=[0.25, 0.75],
                 data=plot_df, palette="tab10", ax=axs[1])
+    axs[0].set_xlabel('')
+    if (dimension == '2D') and (highest_fidelity == 'hf'):
+        location = 'lower left'
+    else:
+        location = 'upper right'
+    axs[0].legend(loc=location, fontsize=10)
+    axs[1].get_legend().remove()
+    axs[0].set_ylabel('Highest fidelity iterations', fontsize=14)
+    axs[1].set_ylabel('CPU time [h]', fontsize=14)
+    axs[1].set_xlabel('Setup', fontsize=14)
+    axs[0].set_xticks([])
     fig.suptitle(
         f'{dimension} Multi-task learning convergence results', fontsize=16)
     fig.tight_layout()

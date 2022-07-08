@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams.update({"text.usetex": True, "font.size": 12})  # Tex rendering
+plt.rc('font', **{ 'family': 'serif', 'size': 12, })
+plt.rc('text', **{ 'usetex': True, 'latex.preamble': r""" \usepackage{physics} \usepackage{siunitx} """ })
 import seaborn as sns
 import click
 
@@ -403,7 +404,8 @@ def plot_cost_to_reach_convergence(plot_settings, folder, show_plots):
                fontsize=10)
     ax.set_ylim(0, 150)
     support_tasks = [task.upper() for task in support_tasks]
-    plt.title(f'2D Multi-task convergence results for ' + titles[fidelities])
+    plt.title('2D Multi-task convergence results for ' + titles[fidelities],
+              fontsize=16)
     if convergence_metric == 'convergence_cost':
         if scale_y_axis:
             plt.ylim(2*3.5, 150)
@@ -414,8 +416,8 @@ def plot_cost_to_reach_convergence(plot_settings, folder, show_plots):
     else:
         plt.ylim(plot_bounds[0], plot_bounds[1])
         ylabel = f'Total iteration to reach convergence [{tolerance} kcal/mol]'
-    plt.ylabel(ylabel)
-    plt.xlabel('Acquisition functions')
+    plt.ylabel(ylabel, fontsize=14)
+    plt.xlabel('Acquisition functions', fontsize=14)
     if show_plots:
         plt.show()
     else:

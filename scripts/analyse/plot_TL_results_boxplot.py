@@ -5,7 +5,8 @@ from posixpath import split
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
-plt.rcParams.update({"text.usetex": True, "font.size": 12})  # Tex rendering
+plt.rc('font', **{ 'family': 'serif', 'size': 12, })
+plt.rc('text', **{ 'usetex': True, 'latex.preamble': r""" \usepackage{physics} \usepackage{siunitx} """ })
 import seaborn as sns
 import pandas as pd
 import click
@@ -22,13 +23,13 @@ sub_dataframes_2D = [('2HFbasic1', '2HFICM1'),
 sub_dataframes_4D = [('4HFbasic1', '4HFICM1'),
                      ('4UHFbasic1_r', '4UHFICM1_r', '4UHFICM2_r', '4UHFICM3_r', '4UHFICM4_r')]
 convert_strings = {
-    '2HFbasic1': 'HF Baseline',
-    '2UHFbasic1_r': 'UHF Baseline',
+    '2HFbasic1': 'HF',
+    '2UHFbasic1_r': 'UHF',
     '2HFICM1': r'LF $\rightarrow$ HF',
     '2UHFICM1': r'LF $\rightarrow$ UHF',
     '2UHFICM2': r'HF $\rightarrow$ UHF',
-    '4HFbasic1': 'HF Baseline',
-    '4UHFbasic1_r': 'UHF Baseline',
+    '4HFbasic1': 'HF',
+    '4UHFbasic1_r': 'UHF',
     '4HFICM1': r'LF $\rightarrow$ HF',
     '4UHFICM1_r': r'LF $\rightarrow$ UHF',
     '4UHFICM3_r': r'LF $\rightarrow$ UHF',
@@ -102,18 +103,20 @@ def plot_convergence_as_boxplot(df, tolerance, dimension, show_plots,
         if print_summary:
             print(experiment_df.groupby(['Setup', 'Lower fid. samples'])\
                 ['CPU time [h]'].describe(percentiles=[.5]).round(2))
-    axs['a)'].set_title('HF accuracy')
-    axs['c)'].set_title('UHF accuracy')
     for ax in ['a)', 'c)']:
         axs[ax].set_xlabel('')
         axs[ax].set_xticks([])
-        axs[ax].legend(loc='upper right', title='Lower fid.\nsamples')
-    axs['b)'].get_legend().remove()
+        axs[ax].legend(loc='upper right', title='Lower fid.\nsamples',
+                       fontsize=10)
+        handles, labels = axs[ax].get_legend_handles_labels()
+        axs[ax].legend(handles=handles[:], labels=labels[:])
+    for ax in ['b)', 'd)']:
+        axs[ax].get_legend().remove()
+        axs[ax].set_xlabel('')
+    axs['b)'].set_ylabel('CPU time [h]', fontsize=14)
+    axs['a)'].set_ylabel('BO iter.', fontsize=14)
     axs['c)'].set_ylabel('')
     axs['d)'].set_ylabel('')
-    axs['d)'].get_legend().remove()
-    fig.suptitle(
-        f'{dimension} Transfer learning convergence results', fontsize=16)
     if show_plots:
         plt.show()
     else:

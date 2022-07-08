@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams.update({"text.usetex": True, "font.size": 12})  # Tex rendering
+plt.rc('font', **{ 'family': 'serif', 'size': 12, })
+plt.rc('text', **{ 'usetex': True, 'latex.preamble': r""" \usepackage{physics} \usepackage{siunitx} """ })
 import sys
 import click
 from pathlib import Path
@@ -104,7 +105,7 @@ def load_4D_y_values(exp_list, num_points=200):
 
 
 def plot_correlation(y_values, figname='correlation.pdf',
-                                    show_plots=False):
+                     show_plots=False):
     N = y_values[0].shape[0]
     fig, axs = plt.subplots(1, N, figsize=(6.5, 2.5), constrained_layout=True)
     for values_idx, values in enumerate(y_values):
@@ -117,7 +118,7 @@ def plot_correlation(y_values, figname='correlation.pdf',
                        **SCATTER_STYLE, zorder=1-i)
         axs[2].scatter(values[1, :], values[2, :],
                        **SCATTER_STYLE, zorder=1-i)
-    axs[0].legend(fontsize=12)
+    axs[0].legend(fontsize=10)
     axs[0].set_xlabel('LF')
     axs[0].set_ylabel('HF')
     axs[1].set_xlabel('LF')
@@ -149,7 +150,7 @@ def plot_acq_times_comparison(acq_times, figname='acquisition_times.pdf',
         font = {'size': 12}
     plt.rc('font', **font)
 
-    fig, ax = plt.subplots(figsize=(6.5, 3.5), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(3.25, 2.0), constrained_layout=True)
     for i in range(N):
         mean = np.mean(acq_times[i,:])/60
         std_dev = np.std(acq_times[i,:])/60
@@ -159,19 +160,20 @@ def plot_acq_times_comparison(acq_times, figname='acquisition_times.pdf',
             str(f'{round(std_dev,2)}')
         print(i, val)
         if i < 2:
-            ax.annotate(val, [i-0.25, mean+0.15*mean])
-        elif i == 2:
-            ax.annotate(val, [i-0.25, mean+0.15*mean])
-        else:
             ax.annotate(val, [i-0.35, mean+0.15*mean])
+        elif i == 2:
+            ax.annotate(val, [i-0.65, mean+0.15*mean])
+        else:
+            ax.annotate(val, [i-0.55, mean+0.15*mean])
     ax.set_ylim(0, 4*10**2)
     ax.set_xticks(np.arange(N))
-    NAMES = ['Force fields', 'Density functional theory', 'Quantum chemistry']
-    ax.set_xticklabels(NAMES[:N])
+    NAMES = ['LF', 'HF', 'UHF']
+    ax.set_xticklabels(NAMES[:N], fontsize=12)
     # ax.set_xlabel('fidelity')
-    ax.set_ylabel('CPU time [min]')
+    ax.set_ylabel('CPU t [min]', fontsize=14)
+#    ax.set_xlabel('', fontsize=14)
 #    ax.set_ylim(1, 3e4)
-    plt.title(r'Acquisition times for different simulators')
+#    plt.title(r'Acquisition times for different simulators', fontsize=16)
     if not show_plots:
         plt.savefig(FIGS_DIR / figname, dpi=300)
     else:
