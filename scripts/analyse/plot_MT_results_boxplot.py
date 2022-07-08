@@ -5,7 +5,8 @@ from posixpath import split
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
-plt.rcParams.update({"text.usetex": True, "font.size": 12})  # Tex rendering
+plt.rc('font', **{ 'family': 'serif', 'size': 12, })
+plt.rc('text', **{ 'usetex': True, 'latex.preamble': r""" \usepackage{physics} \usepackage{siunitx} """ })
 import seaborn as sns
 import pandas as pd
 import click
@@ -65,11 +66,11 @@ def plot_convergence_as_boxplot(
 
     plot_df['iterations'] = plot_df[
         'iterations_to_gmp_convergence'].map(lambda x: x[tolerance_idx])
-    plot_df['Highest fidelity\niterations'] = plot_df[
+    plot_df['BO iter.'] = plot_df[
         'highest_fidelity_iterations_to_gmp_convergence'].map(
             lambda x: x[tolerance_idx])
     plot_df
-    plot_df['CPU time [h]'] = plot_df[
+    plot_df['CPU t [h]'] = plot_df[
         'totaltime_to_gmp_convergence'].map(
             lambda x: chose_value_with_tolerance(x, tolerance_idx))
 
@@ -80,21 +81,23 @@ def plot_convergence_as_boxplot(
     else:
         raise Exception("Invalid highest fidelity")
 
-    fig, axs = plt.subplots(2, 1, figsize=(6.5, 5.5))
+    fig, axs = plt.subplots(2, 1, figsize=(6.5, 4.5))
     conditions_strategy = [
         (plot_df['name'].str.contains('basic') ),
         (plot_df['name'].str.contains('ICM1')),
         (plot_df['name'].str.contains('ICM2'))]
-    strategies = ['Baseline', r'LF $\rightarrow$ UHF',
+    strategies = ['BL', r'LF $\rightarrow$ UHF',
                   r'HF $\rightarrow$ UHF']
+    if highest_fidelity == 'hf':
+        strategies[1] = r'LF $\rightarrow$ HF'
     conditions_approach = [
         (plot_df['name'].str.contains('basic')),
         (plot_df['name'].str.contains('ELCB1')),
         (plot_df['name'].str.contains('ELCB3')),
         (plot_df['name'].str.contains('ELCB6'))]
-    approaches = ['Single fidelity', 'MFBO approach 1',
-                  'MFBO approach 3',
-                  'MFBO approach 6']
+    approaches = ['BL', 'MFBO 1',
+                  'MFBO 3',
+                  'MFBO 6']
     if print_not_converged:
         iterations_df = plot_df[['name', 'iterations']]
         print(iterations_df[iterations_df['iterations'].isna()])
@@ -102,13 +105,22 @@ def plot_convergence_as_boxplot(
     plot_df['Strategy'] = np.select(conditions_approach, approaches)
     if print_summary:
         print(plot_df.groupby(['Setup', 'Strategy'])\
-            ['CPU time [h]'].describe(percentiles=[.5]).round(2))
-    sns.boxplot(x='Setup', y='Highest fidelity\niterations', hue='Strategy',
+            ['CPU t [h]'].describe(percentiles=[.5]).round(2))
+    sns.boxplot(x='Setup', y='BO iter.', hue='Strategy',
                 whis=[0.25, 0.75], data=plot_df, palette="tab10", ax=axs[0])
-    sns.boxplot(x='Setup', y='CPU time [h]', hue='Strategy', whis=[0.25, 0.75],
+    sns.boxplot(x='Setup', y='CPU t [h]', hue='Strategy', whis=[0.25, 0.75],
                 data=plot_df, palette="tab10", ax=axs[1])
-    fig.suptitle(
-        f'{dimension} Multi-task learning convergence results', fontsize=16)
+    axs[0].set_xlabel('')
+    if (dimension == '2D') and (highest_fidelity == 'hf'):
+        location = 'lower left'
+    else:
+        location = 'upper right'
+    axs[0].legend(loc=location, fontsize=10)
+    axs[1].get_legend().remove()
+    axs[0].set_ylabel('BO iter.', fontsize=14)
+    axs[1].set_ylabel('CPU t [h]', fontsize=14)
+    axs[1].set_xlabel('')
+    axs[0].set_xticks([])
     fig.tight_layout()
 
     if show_plots:
