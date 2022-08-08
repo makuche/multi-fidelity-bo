@@ -16,7 +16,6 @@ echo "Activated post-processing environment"
 sleep .5
 
 # Run post processing on transfer learning and multi-task learning experiments
-APPLY_POSTPROCESSING=false
 if $APPLY_POSTPROCESSING
 then
     approaches=("transfer_learning" "multi_task_learning")
