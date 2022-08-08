@@ -1,11 +1,11 @@
 #!/bin/bash
 
-APPLY_POSTPROCESSING=false
-PLOT_TIMINGS_CORRELATION=false
-PLOT_SAMPLING_STRATEGIES=false
-PLOT_TL_RESULTS=false
-PLOT_MT_TOYMODEL_RESULTS=false
-PLOT_MT_RESULTS=false
+APPLY_POSTPROCESSING=true
+PLOT_TIMINGS_CORRELATION=true
+PLOT_SAMPLING_STRATEGIES=true
+PLOT_TL_RESULTS=true
+PLOT_MT_TOYMODEL_RESULTS=true
+PLOT_MT_RESULTS=true
 PLOT_EFFICIENCY=true
 
 # Activate environment
@@ -61,10 +61,10 @@ if $PLOT_MT_RESULTS
 then
     for dimension in "2D" "4D"; do
         for target_fidelity in "uhf" "hf"; do
-        echo "Plotting toymodel for fidelity combination $fidelities"
+        echo "Plotting MT results for fidelity combination $fidelities"
             python3 $SCRIPTS_DIR/analyse/plot_MT_results_boxplot.py \
             --highest_fidelity $target_fidelity --print_summary \
-            --dimension $dimension --print_non_converged --show_plots
+            --dimension $dimension --print_non_converged
         done
     done
 fi
@@ -85,7 +85,7 @@ then
     for dimension in "2D" "4D"; do
         echo "Comparing TL and MT for $dimension experiments"
         python3 $SCRIPTS_DIR/analyse/plot_efficiency.py \
-        --dimension $dimension --show_plots
+        --dimension $dimension
     done
 fi
 
