@@ -63,55 +63,55 @@ def plot_convergence_as_boxplot(
     plot_df = df[['name', 'iterations_to_gmp_convergence',
                   'totaltime_to_gmp_convergence',
                   'highest_fidelity_iterations_to_gmp_convergence']]
-
-    plot_df['iterations'] = plot_df[
+    plot_df.index = range(len(plot_df))
+    df_copy = plot_df.copy()
+    df_copy['iterations'] = plot_df[
         'iterations_to_gmp_convergence'].map(lambda x: x[tolerance_idx])
-    plot_df['BO iter.'] = plot_df[
+    df_copy['BO iter.'] = plot_df[
         'highest_fidelity_iterations_to_gmp_convergence'].map(
             lambda x: x[tolerance_idx])
-    plot_df
-    plot_df['CPU t [h]'] = plot_df[
+    df_copy['CPU t [h]'] = plot_df[
         'totaltime_to_gmp_convergence'].map(
             lambda x: chose_value_with_tolerance(x, tolerance_idx))
 
     if highest_fidelity == 'uhf':
-        plot_df = plot_df[plot_df['name'].str.contains('UHF') == True]
+        df_copy = df_copy[df_copy['name'].str.contains('UHF') == True]
     elif highest_fidelity == 'hf':
-        plot_df = plot_df[plot_df['name'].str.contains('UHF') == False]
+        df_copy = df_copy[df_copy['name'].str.contains('UHF') == False]
     else:
         raise Exception("Invalid highest fidelity")
     fig, axs = plt.subplots(2, 1, figsize=(6.5, 3))
     conditions_strategy = [
-        (plot_df['name'].str.contains('basic') ),
-        (plot_df['name'].str.contains('ICM1')),
-        (plot_df['name'].str.contains('ICM2'))]
+        (df_copy['name'].str.contains('basic') ),
+        (df_copy['name'].str.contains('ICM1')),
+        (df_copy['name'].str.contains('ICM2'))]
     strategies = ['BL', r'LF $\rightarrow$ UHF',
                   r'HF $\rightarrow$ UHF']
     if highest_fidelity == 'hf':
         strategies[1] = r'LF $\rightarrow$ HF'
     conditions_approach = [
-        (plot_df['name'].str.contains('basic')),
-        (plot_df['name'].str.contains('ELCB1')),
-        (plot_df['name'].str.contains('ELCB3')),
-        (plot_df['name'].str.contains('ELCB6'))]
+        (df_copy['name'].str.contains('basic')),
+        (df_copy['name'].str.contains('ELCB1')),
+        (df_copy['name'].str.contains('ELCB3')),
+        (df_copy['name'].str.contains('ELCB6'))]
     approaches = ['BL', 'MFBO 1',
                   'MFBO 3',
                   'MFBO 6']
     if print_not_converged:
-        iterations_df = plot_df[['name', 'iterations']]
+        iterations_df = df_copy[['name', 'iterations']]
         print(iterations_df[iterations_df['iterations'].isna()])
-    plot_df['Setup'] = np.select(conditions_strategy, strategies)
-    plot_df['Strategy'] = np.select(conditions_approach, approaches)
+    df_copy['Setup'] = np.select(conditions_strategy, strategies)
+    df_copy['Strategy'] = np.select(conditions_approach, approaches)
     if print_summary:
-        print(plot_df.groupby(['Setup', 'Strategy'])\
+        print(df_copy.groupby(['Setup', 'Strategy'])\
             ['CPU t [h]'].describe(percentiles=[.5]).round(2))
     sns.boxplot(x='Setup', y='BO iter.', hue='Strategy',
-                whis=[0.25, 0.75], data=plot_df, palette="tab10", ax=axs[0],
+                whis=[0.25, 0.75], data=df_copy, palette="tab10", ax=axs[0],
                 showmeans=True, meanprops={"marker": "x", "markersize": 6,
                                            "markeredgecolor": "black",
                                            "markeredgewidth": 1})
     sns.boxplot(x='Setup', y='CPU t [h]', hue='Strategy', whis=[0.25, 0.75],
-                data=plot_df, palette="tab10", ax=axs[1], showmeans=True,
+                data=df_copy, palette="tab10", ax=axs[1], showmeans=True,
                 meanprops={"marker": "x", "markersize": 6,
                            "markeredgecolor": "black",
                            "markeredgewidth": 1})

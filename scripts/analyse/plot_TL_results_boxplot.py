@@ -21,7 +21,8 @@ ax_labels = [['a)', 'b)'], ['c)', 'd)']]
 sub_dataframes_2D = [('2HFbasic1', '2HFICM1'),
                      ('2UHFbasic1_r', '2UHFICM1', '2UHFICM2')]
 sub_dataframes_4D = [('4HFbasic1', '4HFICM1'),
-                     ('4UHFbasic1_r', '4UHFICM1_r', '4UHFICM2_r', '4UHFICM3_r', '4UHFICM4_r')]
+                     ('4UHFbasic1_r', '4UHFICM1_r', '4UHFICM2_r', '4UHFICM3_r',
+                      '4UHFICM4_r')]
 convert_strings = {
     '2LFbasic1': 'LF',
     '2HFbasic1': 'HF',
@@ -132,7 +133,8 @@ def plot_convergence_as_boxplot(df, tolerance, dimension, show_plots,
     if show_plots:
         plt.show()
     else:
-        plt.savefig(f'results/figs/transfer_learning_boxplots_{dimension}.pdf')
+        name = f'transfer_learning_boxplots_{dimension}.pdf'
+        plt.savefig(FIGS_DIR / name)
 
 
 def create_plot_dataframe(df, tolerance):
@@ -141,25 +143,28 @@ def create_plot_dataframe(df, tolerance):
     plot_df = df[['name', 'iterations_to_gmp_convergence',
                   'totaltime_to_gmp_convergence', 'initpts',
                   'cumulative_num_highest_fidelity_samples']]
-    plot_df['iterations'] = plot_df[
-        'iterations_to_gmp_convergence'].map(
+    plot_df.index = range(len(plot_df))
+    df_copy = plot_df.copy()
+#    import IPython; IPython.embed()
+    df_copy['iterations'] = plot_df[
+        'iterations_to_gmp_convergence'].copy().map(
             lambda x: chose_value_with_tolerance(x, tolerance_idx))
-    plot_df['totaltime'] = plot_df[
+    df_copy['totaltime'] = plot_df[
         'totaltime_to_gmp_convergence'].map(
             lambda x: chose_value_with_tolerance(x, tolerance_idx,
                                                  time_in_h=True))
-    plot_df['tl_initpts'] = plot_df[
+    df_copy['tl_initpts'] = plot_df[
         'initpts'].map(lambda x: x[1])
-    plot_df.drop_duplicates(
+    df_copy.drop_duplicates(
         subset=['totaltime', 'tl_initpts', 'name'], inplace=True)
-    plot_df['setup'] = plot_df['name'].map(lambda x: convert_strings[x])
-    plot_df.rename(
+    df_copy['setup'] = plot_df['name'].map(lambda x: convert_strings[x])
+    df_copy.rename(
         columns={'tl_initpts': 'Lower fid. samples',
                  'totaltime': 'CPU time [h]',
                  'setup': 'Setup',
                  'iterations': 'Highest fidelity iterations'},
         inplace=True)
-    return plot_df
+    return df_copy
 
 
 def chose_value_with_tolerance(x, tolerance_idx, time_in_h=False):
