@@ -13,14 +13,7 @@ from src.read_toymodel_outputs import OutputFileParser, ParserToDataFrame
 THESIS_FOLDER = Path(__file__).resolve().parent.parent.parent
 FIGS_DIR = THESIS_FOLDER / 'results/figs'
 TOYMODEL_FOLDER = THESIS_FOLDER / 'data/multi_task_learning/toymodel'
-legend_labels = ['Single fidelity',
-                 'MFBO Approach 1',
-                 'MFBO Approach 2',
-                 'MFBO Approach 3',
-                 'MFBO Approach 4',
-                 'MFBO Approach 5',
-                 'MFBO Approach 6',
-                 'MFBO Approach 7']
+legend_labels = ['BL'] + [f'MFBO {i}' for i in range(1,8)]
 transfer_learning_results = {'uhf_hf': 6, 'uhf_lf': 17}
 scales = {'uhf_hf': [2, 40], 'uhf_lf': [2, 55]}
 fidelities = 'uhf_hf'
@@ -40,7 +33,7 @@ plot_settings = {
     'plot_bounds': scales[fidelities],
     'best_tl_result':None,   # 4 HF->UHF, 15 LF->UHF
     'acqfns': ['elcb', 'mes'],
-    'acqfns_label': {'elcb': 'ELCB', 'mes': 'MaxValEntropySearch', 'mumbo': 'MUMBO'}
+    'acqfns_label': {'elcb': 'ELCB', 'mes': 'MES', 'mumbo': 'MUMBO'}
 }
 titles = {'uhf_lf': r'LF $\rightarrow$ UHF',
           'uhf_hf': r'HF $\rightarrow$ UHF'}
@@ -382,17 +375,23 @@ def plot_cost_to_reach_convergence(plot_settings, folder, show_plots):
     if scale_y_axis:
         df[convergence_metric] = df[convergence_metric].apply(
             lambda x: x/3600)
-    fig, ax = plt.subplots(figsize=(6.5, 5))
+    fig, ax = plt.subplots(figsize=(6.5, 2.5))
     plot_df = df[['acqfn', 'strategy', convergence_metric]]
     single_task_plot_df = plot_df[plot_df['strategy'] == 'st']
     multi_task_plot_df = plot_df[plot_df['strategy'] != 'st'].copy()
     plot_order = ['st'] + [f'strategy{idx}' for idx in strategy_indices]
     ax = sns.boxplot(x='acqfn', y=convergence_metric, hue='strategy',
-                     data=single_task_plot_df, hue_order=plot_order,
-                     palette="tab10")
-    ax = sns.boxplot(x='acqfn', y=convergence_metric, hue='strategy',
+                     data=single_task_plot_df, hue_order=plot_order, #whis=[0.25, 0.75],
+                     palette="tab10", showmeans=True,
+                     meanprops={"marker": "x", "markersize": 6,
+                                "markeredgecolor": "black",
+                                "markeredgewidth": 1})
+    ax = sns.boxplot(x='acqfn', y=convergence_metric, hue='strategy', #whis=[0.25, 0.75],
                      data=multi_task_plot_df, hue_order=plot_order,
-                     palette="tab10")
+                     palette="tab10", showmeans=True,
+                     meanprops={"marker": "x", "markersize": 6,
+                                "markeredgecolor": "black",
+                                "markeredgewidth": 1})
     if best_tl_result is not None:
         plt.axhline(best_tl_result, ls='dashed', c='gray', alpha=.5,
                     label='Best Transfer learning strategy')
@@ -404,20 +403,18 @@ def plot_cost_to_reach_convergence(plot_settings, folder, show_plots):
                fontsize=10)
     ax.set_ylim(0, 150)
     support_tasks = [task.upper() for task in support_tasks]
-    plt.title('2D Multi-task convergence results for ' + titles[fidelities],
-              fontsize=16)
     if convergence_metric == 'convergence_cost':
         if scale_y_axis:
             plt.ylim(2*3.5, 150)
         else:
             plt.ylim(single_task_cost*plot_bounds[0],
                      single_task_cost*plot_bounds[1])
-        ylabel = f'CPU time [h]'
+        ylabel = f'CPU t [h]'
     else:
         plt.ylim(plot_bounds[0], plot_bounds[1])
         ylabel = f'Total iteration to reach convergence [{tolerance} kcal/mol]'
     plt.ylabel(ylabel, fontsize=14)
-    plt.xlabel('Acquisition functions', fontsize=14)
+    plt.xlabel('')
     if show_plots:
         plt.show()
     else:

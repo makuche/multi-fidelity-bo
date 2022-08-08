@@ -80,8 +80,7 @@ def plot_convergence_as_boxplot(
         plot_df = plot_df[plot_df['name'].str.contains('UHF') == False]
     else:
         raise Exception("Invalid highest fidelity")
-
-    fig, axs = plt.subplots(2, 1, figsize=(6.5, 4.5))
+    fig, axs = plt.subplots(2, 1, figsize=(6.5, 3))
     conditions_strategy = [
         (plot_df['name'].str.contains('basic') ),
         (plot_df['name'].str.contains('ICM1')),
@@ -107,16 +106,24 @@ def plot_convergence_as_boxplot(
         print(plot_df.groupby(['Setup', 'Strategy'])\
             ['CPU t [h]'].describe(percentiles=[.5]).round(2))
     sns.boxplot(x='Setup', y='BO iter.', hue='Strategy',
-                whis=[0.25, 0.75], data=plot_df, palette="tab10", ax=axs[0])
+                whis=[0.25, 0.75], data=plot_df, palette="tab10", ax=axs[0],
+                showmeans=True, meanprops={"marker": "x", "markersize": 6,
+                                           "markeredgecolor": "black",
+                                           "markeredgewidth": 1})
     sns.boxplot(x='Setup', y='CPU t [h]', hue='Strategy', whis=[0.25, 0.75],
-                data=plot_df, palette="tab10", ax=axs[1])
+                data=plot_df, palette="tab10", ax=axs[1], showmeans=True,
+                meanprops={"marker": "x", "markersize": 6,
+                           "markeredgecolor": "black",
+                           "markeredgewidth": 1})
     axs[0].set_xlabel('')
     if (dimension == '2D') and (highest_fidelity == 'hf'):
-        location = 'lower left'
+        location, legend_idx = 'upper left', 1
+    elif (dimension == '4D') and (highest_fidelity == 'uhf'):
+        location, legend_idx = 'upper right', 0
     else:
-        location = 'upper right'
-    axs[0].legend(loc=location, fontsize=10)
-    axs[1].get_legend().remove()
+        location, legend_idx = 'lower left', 0
+    axs[legend_idx].legend(loc=location, fontsize=10, ncol=2, columnspacing=.5)
+    axs[1 - legend_idx].get_legend().remove()
     axs[0].set_ylabel('BO iter.', fontsize=14)
     axs[1].set_ylabel('CPU t [h]', fontsize=14)
     axs[1].set_xlabel('')

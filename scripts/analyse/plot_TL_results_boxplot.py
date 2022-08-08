@@ -23,11 +23,13 @@ sub_dataframes_2D = [('2HFbasic1', '2HFICM1'),
 sub_dataframes_4D = [('4HFbasic1', '4HFICM1'),
                      ('4UHFbasic1_r', '4UHFICM1_r', '4UHFICM2_r', '4UHFICM3_r', '4UHFICM4_r')]
 convert_strings = {
+    '2LFbasic1': 'LF',
     '2HFbasic1': 'HF',
     '2UHFbasic1_r': 'UHF',
     '2HFICM1': r'LF $\rightarrow$ HF',
     '2UHFICM1': r'LF $\rightarrow$ UHF',
     '2UHFICM2': r'HF $\rightarrow$ UHF',
+    '4LFbasic1': 'LF',
     '4HFbasic1': 'HF',
     '4UHFbasic1_r': 'UHF',
     '4HFICM1': r'LF $\rightarrow$ HF',
@@ -58,6 +60,10 @@ def main(show_plots, dimension, tolerance, print_summary):
                       exp for exp in config.keys()]
     bl_experiments = [THESIS_DIR / 'data/transfer_learning' / 'processed' /
                       config[exp][0] for exp in config]
+    bl_experiments.append(
+        THESIS_DIR / 'data/transfer_learning/processed/2LFbasic1')
+    bl_experiments.append(
+        THESIS_DIR / 'data/transfer_learning/processed/4LFbasic1')
     tl_exp_data = load_experiments(tl_experiments)
     bl_exp_data = load_experiments(bl_experiments)
     df = load_statistics_to_dataframe(bl_exp_data, tl_exp_data, num_exp=5)
@@ -96,10 +102,16 @@ def plot_convergence_as_boxplot(df, tolerance, dimension, show_plots,
         sns.boxplot(x='Setup', y='Highest fidelity iterations',
                     data=experiment_df, ax=axs[ax_label[0]], width=0.75,
                     palette="tab10", hue='Lower fid. samples',
-                    whis=[0.25, 0.75])
+                    whis=[0.25, 0.75], showmeans=True,
+                    meanprops={"marker": "x", "markersize": 6,
+                               "markeredgecolor": "black",
+                               "markeredgewidth": 1})
         sns.boxplot(x='Setup', y='CPU time [h]', data=experiment_df,
                     ax=axs[ax_label[1]], width=0.75, palette="tab10",
-                    hue='Lower fid. samples', whis=[0.25, 0.75])
+                    hue='Lower fid. samples', whis=[0.25, 0.75],
+                    showmeans=True, meanprops={"marker": "x", "markersize": 6,
+                                               "markeredgecolor": "black",
+                                               "markeredgewidth": 1})
         if print_summary:
             print(experiment_df.groupby(['Setup', 'Lower fid. samples'])\
                 ['CPU time [h]'].describe(percentiles=[.5]).round(2))
