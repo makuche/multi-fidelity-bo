@@ -40,13 +40,11 @@ def main(show_plots):
     y_values_2D, acq_times = load_2D_y_values_and_acq_times(exp_list_2D)
     y_values_4D = load_4D_y_values(exp_list_4D)
     plot_acq_times_comparison(acq_times, show_plots=show_plots)
-    # plot_acq_times_histograms(acq_times, NAMES, show_plots=args.show_plots)
     for y_values in [y_values_2D, y_values_4D]:
         print_correlation_matrix(y_values)
     #    print_and_plot_summary_statistics(y_values,
     #                                      show_plots=args.show_plots)
     plot_correlation([y_values_2D, y_values_4D], show_plots=show_plots)
-    # plot_correlation_coefficient([y_values_2D, y_values_4D], show_plots)
 
 
 def load_2D_y_values_and_acq_times(exp_list, num_points=100):
@@ -165,57 +163,11 @@ def plot_acq_times_comparison(acq_times, figname='acquisition_times.pdf',
             ax.annotate(val, [i-0.65, mean+0.15*mean])
         else:
             ax.annotate(val, [i-0.55, mean+0.15*mean])
-    ax.set_ylim(0, 4*10**2)
+    ax.set_ylim(0.02, 4*10**2)
     ax.set_xticks(np.arange(N))
     NAMES = ['LF', 'HF', 'UHF']
     ax.set_xticklabels(NAMES[:N], fontsize=12)
-    # ax.set_xlabel('fidelity')
     ax.set_ylabel('CPU t [min]', fontsize=14)
-#    ax.set_xlabel('', fontsize=14)
-#    ax.set_ylim(1, 3e4)
-#    plt.title(r'Acquisition times for different simulators', fontsize=16)
-    if not show_plots:
-        plt.savefig(FIGS_DIR / figname, dpi=300)
-    else:
-        plt.show()
-    plt.close()
-
-
-def plot_acq_times_histograms(acq_times, exp_names=NAMES,
-                              figname='acq_times_histograms.pdf',
-                              show_plots=False):
-    N = acq_times.shape[0] // 2
-    if N % 2 == 0:
-        N = acq_times.shape[0] // 2
-        fig, axs = plt.subplots(nrows=N, ncols=N, figsize=(9, 9),
-                                constrained_layout=True)
-        for i in range(acq_times.shape[0]):
-            ax = axs[i // 2][i % 2]
-            ax.hist(acq_times[i, :], bins=50, alpha=.7, color='#000082')
-            ax.axvline(acq_times[i, :].mean(), color='k', linestyle='dashed',
-                       linewidth=3, label='mean')
-            ax.axvline(np.median(acq_times[i, :]), color='#FE0000',
-                       linestyle='dashed', linewidth=3, label='median')
-            ax.set_title(exp_names[i])
-            ax.set_xlabel(r'$t$ [s]')
-            axs[N-1, N-1].legend()
-    elif N % 2 == 1:
-        N = acq_times.shape[0]
-        fig, axs = plt.subplots(nrows=1, ncols= N, figsize=(16, 6),
-                                constrained_layout=True)
-        for i in range(acq_times.shape[0]):
-            ax = axs[i]
-            ax.hist(acq_times[i, 1:], bins=50, alpha=.7, color='#000082')
-            ax.axvline(acq_times[i, 1:].mean(), color='k', linestyle='dashed',
-                       linewidth=3,
-                       label=f'mean: {round(acq_times[i, 1:].mean(), 2)}')
-            ax.axvline(np.median(acq_times[i, 1:]), color='#FE0000',
-                       linestyle='dashed', linewidth=3,
-                       label=f'median: {round(np.median(acq_times[i, 1:]), 2)}')
-            ax.set_title(exp_names[i])
-            ax.set_xlabel(r'$t$ [s]')
-            axs[i].legend()
-
     if not show_plots:
         plt.savefig(FIGS_DIR / figname, dpi=300)
     else:
@@ -271,35 +223,6 @@ def print_and_plot_summary_statistics(y_values, show_plots=False):
     #     axs.boxplot(y_values.T, vert=True, patch_artist=True, labels=NAMES)
     #     axs.set_ylabel("Observed values")
     #     plt.show()
-
-
-def plot_correlation_coefficient(y_values, show_plots=False):
-    titles = ('Cross-covariance', 'Correlation coefficient')
-    functions = (np.cov, np.corrcoef)
-    for title, function in zip(titles, functions):
-        fig, axs = plt.subplots(1, 2, figsize=(12, 6), sharey=True)
-        for val_idx, values in enumerate(y_values):
-            iterations = values.shape[1]
-            correlations = np.array([function(values[:, :iter_]).round(decimals=3)
-                            for iter_ in range(3, iterations)])
-            axs[val_idx].plot(np.arange(len(correlations)), correlations[:, 0, 1],
-                    label='B(LF,HF)')
-            axs[val_idx].plot(np.arange(len(correlations)), correlations[:, 0, 2],
-                    label='B(LF,UHF)')
-            axs[val_idx].plot(np.arange(len(correlations)), correlations[:, 1, 2],
-                    label='B(HF,UHF)')
-            axs[val_idx].set_xlabel('iteration')
-            axs[0].set_ylabel(title)
-            axs[val_idx].legend()
-        axs[0].set_title('2D', fontsize=12)
-        axs[1].set_title('4D', fontsize=12)
-        fig.suptitle(
-            f'{title} between the fidelities over iteration', fontsize=18)
-        if not show_plots:
-            plt.savefig(FIGS_DIR /  f'{title}.pdf', dpi=300)
-        else:
-            plt.show()
-        plt.close()
 
 
 if __name__ == '__main__':
