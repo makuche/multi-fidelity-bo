@@ -29,7 +29,6 @@ PyYAML==6.0
 scipy==1.8.1
 seaborn==0.11.2
 six==1.16.0
--e git+ssh://git@github.com/mkuchelmeister/master-thesis.git@08e6d0a3464fc4bf7e82632c709ff2b24a36b974#egg=src
 stack-data==0.3.0
 tabulate==0.8.10
 traitlets==5.3.0
