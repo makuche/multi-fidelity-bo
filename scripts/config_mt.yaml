@@ -18,7 +18,8 @@ baselines:
   4HFbasic0: 4HFbasic1
   4HFbasic1: 4HFbasic1
   4UHFbasic1_r: 4UHFbasic1_r
-
+  4UHF_basic_MES: 4UHFbasic1_r
+  #4UHF_basic_ELCB: 4UHFbasic1_r
 
 # TL_experiments:
 #   experiment:
@@ -34,6 +35,18 @@ experiments:
   2HF_ICM1_ELCB6:
     - [2HFbasic1, random]
     - [2LFbasic1, inorder]
+  2HF_ICM1_MES1:
+    - [2HFbasic1, random]
+    - [2LFbasic1, inorder]
+  2HF_ICM1_MES3:
+    - [2HFbasic1, random]
+    - [2LFbasic1, inorder]
+  2HF_ICM1_MES6:
+    - [2HFbasic1, random]
+    - [2LFbasic1, inorder]
+  2HF_ICM1_MUMBO:
+    - [2HFbasic1, random]
+    - [2LFbasic1, inorder]
   2UHF_ICM1_ELCB1:
     - [2UHFbasic1_r, random]
     - [2LFbasic1, inorder]
@@ -43,15 +56,39 @@ experiments:
   2UHF_ICM1_ELCB6:
     - [2UHFbasic1_r, random]
     - [2LFbasic1, inorder]
+  2UHF_ICM1_MES1:
+    - [2UHFbasic1_r, random]
+    - [2LFbasic1, inorder]
+  2UHF_ICM1_MES3:
+    - [2UHFbasic1_r, random]
+    - [2LFbasic1, inorder]
+  2UHF_ICM1_MES6:
+    - [2UHFbasic1_r, random]
+    - [2LFbasic1, inorder]
+  2UHF_ICM1_MUMBO:
+    - [2UHFbasic1_r, random]
+    - [2LFbasic1, inorder]
   2UHF_ICM2_ELCB1:
     - [2UHFbasic1_r, random]
-    - [2LFbasic1, inorder]
+    - [2HFbasic1, inorder]
   2UHF_ICM2_ELCB3:
     - [2UHFbasic1_r, random]
-    - [2LFbasic1, inorder]
+    - [2HFbasic1, inorder]
   2UHF_ICM2_ELCB6:
     - [2UHFbasic1_r, random]
-    - [2LFbasic1, inorder]
+    - [2HFbasic1, inorder]
+  2UHF_ICM2_MES1:
+    - [2UHFbasic1_r, random]
+    - [2HFbasic1, inorder]
+  2UHF_ICM2_MES3:
+    - [2UHFbasic1_r, random]
+    - [2HFbasic1, inorder]
+  2UHF_ICM2_MES6:
+    - [2UHFbasic1_r, random]
+    - [2HFbasic1, inorder]
+  2UHF_ICM2_MUMBO:
+    - [2UHFbasic1_r, random]
+    - [2HFbasic1, inorder]
   4HF_ICM1_ELCB1:
     - [4HFbasic1, random]
     - [4LFbasic1, inorder]
@@ -59,6 +96,15 @@ experiments:
     - [4HFbasic1, random]
     - [4LFbasic1, inorder]
   4HF_ICM1_ELCB6:
+    - [4HFbasic1, random]
+    - [4LFbasic1, inorder]
+  4HF_ICM1_MES1:
+    - [4HFbasic1, random]
+    - [4LFbasic1, inorder]
+  4HF_ICM1_MES3:
+    - [4HFbasic1, random]
+    - [4LFbasic1, inorder]
+  4HF_ICM1_MES6:
     - [4HFbasic1, random]
     - [4LFbasic1, inorder]
   4UHF_ICM1_ELCB1:
@@ -72,13 +118,37 @@ experiments:
     - [4LFbasic1, inorder]
   4UHF_ICM2_ELCB1:
     - [4UHFbasic1_r, random]
-    - [4LFbasic1, inorder]
+    - [4HFbasic1, inorder]
   4UHF_ICM2_ELCB3:
     - [4UHFbasic1_r, random]
-    - [4LFbasic1, inorder]
+    - [4HFbasic1, inorder]
   4UHF_ICM2_ELCB6:
     - [4UHFbasic1_r, random]
+    - [4HFbasic1, inorder]
+  4UHF_ICM1_MES1:
+    - [4UHFbasic1_r, random]
     - [4LFbasic1, inorder]
+  4UHF_ICM1_MES3:
+    - [4UHFbasic1_r, random]
+    - [4LFbasic1, inorder]
+  4UHF_ICM1_MES6:
+    - [4UHFbasic1_r, random]
+    - [4LFbasic1, inorder]
+  4UHF_ICM1_MUMBO:
+    - [4UHFbasic1_r, random]
+    - [4LFbasic1, inorder]
+  4UHF_ICM2_MES1:
+    - [4UHFbasic1_r, random]
+    - [4HFbasic1, inorder]
+  4UHF_ICM2_MES3:
+    - [4UHFbasic1_r, random]
+    - [4HFbasic1, inorder]
+  4UHF_ICM2_MES6:
+    - [4UHFbasic1_r, random]
+    - [4HFbasic1, inorder]
+  4UHF_ICM2_MUMBO:
+    - [4UHFbasic1_r, random]
+    - [4HFbasic1, inorder]
 
 # Tolerances levels for convergence in units of kcal/mol.
 tolerances: [5, 2, 1, 0.5, 0.23, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001]
@@ -89,20 +159,43 @@ MT_experiment_plots_2D:
   2HF_ICM1_ELCB1: [2HFbasic1, 2LFbasic1]
   2HF_ICM1_ELCB3: [2HFbasic1, 2LFbasic1]
   2HF_ICM1_ELCB6: [2HFbasic1, 2LFbasic1]
+  2HF_ICM1_MES1: [2HFbasic1, 2LFbasic1]
+  2HF_ICM1_MES3: [2HFbasic1, 2LFbasic1]
+  2HF_ICM1_MES6: [2HFbasic1, 2LFbasic1]
+  2HF_ICM1_MUMBO: [2HFbasic1, 2LFbasic1]
   2UHF_ICM1_ELCB1: [2UHFbasic1_r, 2LFbasic1]
   2UHF_ICM1_ELCB3: [2UHFbasic1_r, 2LFbasic1]
   2UHF_ICM1_ELCB6: [2UHFbasic1_r, 2LFbasic1]
-  2UHF_ICM2_ELCB1: [2UHFbasic1_r, 2LFbasic1]
-  2UHF_ICM2_ELCB3: [2UHFbasic1_r, 2LFbasic1]
-  2UHF_ICM2_ELCB6: [2UHFbasic1_r, 2LFbasic1]
+  2UHF_ICM1_MES1: [2UHFbasic1_r, 2LFbasic1]
+  2UHF_ICM1_MES3: [2UHFbasic1_r, 2LFbasic1]
+  2UHF_ICM1_MES6: [2UHFbasic1_r, 2LFbasic1]
+  2UHF_ICM1_MUMBO: [2UHFbasic1_r, 2LFbasic1]
+  2UHF_ICM2_ELCB1: [2UHFbasic1_r, 2HFbasic1]
+  2UHF_ICM2_ELCB3: [2UHFbasic1_r, 2HFbasic1]
+  2UHF_ICM2_ELCB6: [2UHFbasic1_r, 2HFbasic1]
+  2UHF_ICM2_MES1: [2UHFbasic1_r, 2HFbasic1]
+  2UHF_ICM2_MES3: [2UHFbasic1_r, 2HFbasic1]
+  2UHF_ICM2_MES6: [2UHFbasic1_r, 2HFbasic1]
+  2UHF_ICM2_MUMBO: [2UHFbasic1_r, 2HFbasic1]
 
 MT_experiment_plots_4D:
   4HF_ICM1_ELCB1: [4HFbasic1, 4LFbasic1]
   4HF_ICM1_ELCB3: [4HFbasic1, 4LFbasic1]
   4HF_ICM1_ELCB6: [4HFbasic1, 4LFbasic1]
+  4HF_ICM1_MES1: [4HFbasic1, 4LFbasic1]
+  4HF_ICM1_MES3: [4HFbasic1, 4LFbasic1]
+  4HF_ICM1_MES6: [4HFbasic1, 4LFbasic1]
   4UHF_ICM1_ELCB1: [4UHFbasic1_r, 4LFbasic1]
   4UHF_ICM1_ELCB3: [4UHFbasic1_r, 4LFbasic1]
   4UHF_ICM1_ELCB6: [4UHFbasic1_r, 4LFbasic1]
-  4UHF_ICM2_ELCB1: [4UHFbasic1_r, 4LFbasic1]
-  4UHF_ICM2_ELCB3: [4UHFbasic1_r, 4LFbasic1]
-  4UHF_ICM2_ELCB6: [4UHFbasic1_r, 4LFbasic1]
+  4UHF_ICM2_ELCB1: [4UHFbasic1_r, 4HFbasic1]
+  4UHF_ICM2_ELCB3: [4UHFbasic1_r, 4HFbasic1]
+  4UHF_ICM2_ELCB6: [4UHFbasic1_r, 4HFbasic1]
+  4UHF_ICM1_MES1: [4UHFbasic1_r, 4LFbasic1]
+  4UHF_ICM1_MES3: [4UHFbasic1_r, 4LFbasic1]
+  4UHF_ICM1_MES6: [4UHFbasic1_r, 4LFbasic1]
+  4UHF_ICM1_MUMBO: [4UHFbasic1_r, 4LFbasic1]
+  4UHF_ICM2_MES1: [4UHFbasic1_r, 4HFbasic1]
+  4UHF_ICM2_MES3: [4UHFbasic1_r, 4HFbasic1]
+  4UHF_ICM2_MES6: [4UHFbasic1_r, 4HFbasic1]
+  4UHF_ICM2_MUMBO: [4UHFbasic1_r, 4HFbasic1]
