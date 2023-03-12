@@ -11,3 +11,6 @@ src.egg-info/
 
 # Misc
 misc/
+
+# macOS 
+.DS_Store
